@@ -611,6 +611,114 @@ alerts.sort((a,b)=>b.ts-a.ts);
 renderAll();
 setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST';},1000);
 setInterval(detect,3500);
+
+// ═══════════════════════════════════════════════════════════
+// LIVE API POLLING — connects to server.py at localhost:8000
+// Polls /api/alerts every 3s and merges real alerts into the
+// existing alerts array so both live + internal data show up.
+// ═══════════════════════════════════════════════════════════
+const API_BASE    = 'http://localhost:8000';
+const seenIds     = new Set();  // track already-ingested alerts by composite key
+let   apiAlertsId = 0;          // incremental id for API-sourced alerts
+
+// Map detector class names → frontend display module names
+const MOD_MAP = {
+  'EngineTempDetector':    'ENGINE TEMP',
+  'OilPressureDetector':   'OIL PRESSURE',
+  'VibrationDetector':     'VIBRATION',
+  'TyrePressureDetector':  'TYRE [FL]',
+  'BatteryDetector':       'BATTERY',
+  'AirBrakeDetector':      'AIR BRAKE [PRIMARY]',
+  'AxleOverloadDetector':  'AXLE OVERLOAD',
+  'BeltChainSlipDetector': 'BELT/CHAIN SLIP',
+  'BrakeWearDetector':     'BRAKE WEAR',
+  'TurboDetector':         'TURBO FAILURE',
+  'OverspeedDetector':     'OVERSPEED',
+  'DriverBehaviorDetector':'DRIVER BEHAVIOR',
+  'FuelLeakDetector':      'FUEL LEAK',
+  'AlignmentDetector':     'ALIGNMENT',
+};
+
+// Map vehicle type → fleet class (for colour coding)
+const CLS_MAP = {
+  TRUCK:'HEAVY', BUS:'HEAVY',
+  SCOOTY:'TWO',  BIKE:'TWO',
+  CAR:'CAR',     PICKUP:'CAR', VAN:'CAR',
+};
+
+// Strip emoji prefixes from severity/layer enum values
+// e.g. "🚨 CRITICAL" → "CRITICAL",  "⚠️  WARNING" → "WARNING"
+function cleanLabel(s){ return (s||'').replace(/^[\p{Emoji}\s]+/u,'').trim(); }
+
+// Convert one server alert object → frontend alert object
+function apiToLocal(a){
+  const sev = cleanLabel(a.severity);   // "CRITICAL" | "WARNING" | "LOG"
+  const lay = cleanLabel(a.layer);      // "CRITICAL" | "ANOMALY" | "PREDICTIVE"
+  const vtype = (a.vehicle_type||'CAR').toUpperCase();
+  return {
+    id:       -(++apiAlertsId),          // negative so no clash with internal ids
+    severity: sev,
+    layer:    lay,
+    score:    typeof a.score === 'number' ? a.score : 50,
+    mod:      MOD_MAP[a.module] || a.module || 'FAULT',
+    msg:      a.message || a.active_fault || 'Fault detected',
+    vid:      a.vehicle_id  || 'UNKNOWN',
+    vtype:    vtype,
+    vcls:     CLS_MAP[vtype] || 'CAR',
+    val:      typeof a.value === 'number' ? a.value : 0,
+    ts:       a.timestamp ? new Date(a.timestamp).getTime() : Date.now(),
+    resolved: false,
+  };
+}
+
+// Show a small live indicator when API is reachable
+function setApiStatus(ok){
+  let el = document.getElementById('api-status');
+  if(!el){
+    el = document.createElement('div');
+    el.id = 'api-status';
+    el.style.cssText = 'font-family:var(--mono);font-size:8px;letter-spacing:1.5px;padding:3px 10px;border-radius:2px;margin-left:8px;';
+    const topRight = document.querySelector('.top-right');
+    if(topRight) topRight.prepend(el);
+  }
+  el.textContent = ok ? '⬤ LIVE API' : '⬤ INTERNAL';
+  el.style.color  = ok ? 'var(--teal)' : 'var(--dim)';
+}
+
+async function pollAlerts(){
+  try{
+    const res  = await fetch(`${API_BASE}/api/alerts?limit=100`, {signal: AbortSignal.timeout(2500)});
+    if(!res.ok) throw new Error('bad status');
+    const data = await res.json();
+    let added  = 0;
+
+    for(const a of data){
+      // Deduplicate: key = vehicle + module + timestamp string
+      const key = `${a.vehicle_id}|${a.module}|${a.timestamp}`;
+      if(seenIds.has(key)) continue;
+      seenIds.add(key);
+      const local = apiToLocal(a);
+      alerts.unshift(local);
+      added++;
+      // Update vehicle status dot if this vehicle exists in the internal fleet
+      const v = fleet.find(f=>f.id===a.vehicle_id);
+      if(v){
+        const ac = alerts.filter(x=>x.vid===v.id&&!x.resolved);
+        v.status = ac.some(x=>x.severity==='CRITICAL')?'crit':ac.some(x=>x.severity==='WARNING')?'warn':'ok';
+      }
+    }
+
+    if(alerts.length>600) alerts=alerts.slice(0,600);
+    if(added>0) renderAll();
+    setApiStatus(true);
+  } catch(e){
+    setApiStatus(false);  // server not running — silent fallback to internal data
+  }
+}
+
+// Poll immediately + every 3 seconds
+pollAlerts();
+setInterval(pollAlerts, 3000);
 </script>
 </body>
 </html>
