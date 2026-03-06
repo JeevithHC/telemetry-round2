@@ -2,1135 +2,615 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1.0">
-<title>FleetSentinel — Unified Fleet Dashboard</title>
-<link href="https://fonts.googleapis.com/css2?family=Oxanium:wght@300;400;600;700;800&family=Share+Tech+Mono&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<title>FleetSentinel</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@300;400;500&family=Inter:wght@300;400;500&display=swap" rel="stylesheet">
 <style>
 :root{
-  --bg:#050810;--panel:#0a0f1c;--panel2:#0d1424;--panel3:#111828;--border:#172035;--glow:#1c2f55;
-  --red:#f03e3e;--red-d:#5a1010;--amber:#f59f00;--amber-d:#6b4400;
-  --green:#37b24d;--green-d:#1a3d20;--blue:#339af0;--blue-d:#0d2a4a;
-  --teal:#20c997;--purple:#9775fa;
-  --text:#b8cfe8;--dim:#3a526e;--bright:#dceeff;
-  --mono:'Share Tech Mono',monospace;--disp:'Oxanium',sans-serif;--body:'DM Sans',sans-serif;
-  --heavy-c:#f59f00;--car-c:#339af0;--two-c:#20c997;
+  --bg:#0c0e14;--s1:#111520;--s2:#161b27;--s3:#1c2334;
+  --border:rgba(255,255,255,0.07);--border2:rgba(255,255,255,0.04);
+  --accent:#00c2a8;--accent-dim:rgba(0,194,168,0.12);
+  --red:#ff4757;--red-dim:rgba(255,71,87,0.1);
+  --amber:#ffaa00;--amber-dim:rgba(255,170,0,0.1);
+  --blue:#4d9de0;--blue-dim:rgba(77,157,224,0.1);
+  --text:#c8d6e8;--muted:#4a5a72;--bright:#eef3fa;
+  --mono:'JetBrains Mono',monospace;--disp:'Syne',sans-serif;--body:'Inter',sans-serif;
 }
 *{margin:0;padding:0;box-sizing:border-box;}
-html,body{height:100%;overflow:hidden;}
-body{background:var(--bg);color:var(--text);font-family:var(--body);display:flex;flex-direction:column;}
-body::before{content:'';position:fixed;inset:0;background:repeating-linear-gradient(0deg,transparent,transparent 3px,rgba(0,0,0,0.025) 3px,rgba(0,0,0,0.025) 4px);pointer-events:none;z-index:9999;}
-body::after{content:'';position:fixed;inset:0;background-image:linear-gradient(rgba(20,45,100,0.05) 1px,transparent 1px),linear-gradient(90deg,rgba(20,45,100,0.05) 1px,transparent 1px);background-size:48px 48px;pointer-events:none;z-index:0;}
-.z1{position:relative;z-index:1;}
+html,body{height:100%;overflow:hidden;background:var(--bg);}
+body{color:var(--text);font-family:var(--body);display:flex;flex-direction:column;}
+body::after{content:'';position:fixed;inset:0;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 200 200' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)' opacity='0.03'/%3E%3C/svg%3E");opacity:0.5;pointer-events:none;z-index:9000;}
 
-/* ── TOPBAR ── */
-.topbar{flex-shrink:0;display:flex;align-items:center;gap:0;border-bottom:1px solid var(--border);background:rgba(5,8,16,0.98);backdrop-filter:blur(16px);height:54px;padding:0 20px;}
-.logo{display:flex;align-items:center;gap:10px;margin-right:24px;}
-.logo-box{width:34px;height:34px;border:1.5px solid var(--amber);border-radius:5px;display:flex;align-items:center;justify-content:center;font-size:15px;box-shadow:0 0 14px rgba(245,159,0,0.25);animation:logoBlink 4s ease-in-out infinite;}
-@keyframes logoBlink{0%,100%{box-shadow:0 0 14px rgba(245,159,0,0.25)}50%{box-shadow:0 0 28px rgba(245,159,0,0.5)}}
-.logo-name{font-family:var(--disp);font-weight:800;font-size:18px;letter-spacing:2px;color:var(--bright);text-transform:uppercase;}
-.logo-ver{font-family:var(--mono);font-size:8px;color:var(--amber);letter-spacing:2px;margin-top:1px;}
-.top-stats{display:flex;gap:1px;flex:1;height:100%;}
-.ts{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:0 18px;border-left:1px solid var(--border);min-width:80px;cursor:pointer;transition:background 0.2s;}
-.ts:hover,.ts.active{background:rgba(255,255,255,0.03);}
-.ts-val{font-family:var(--disp);font-weight:700;font-size:22px;line-height:1;}
-.ts-lbl{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-top:1px;}
-.top-right{display:flex;align-items:center;gap:12px;margin-left:auto;padding-left:16px;border-left:1px solid var(--border);}
-.live-pill{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:2px;}
-.ld{width:7px;height:7px;border-radius:50%;background:var(--green);box-shadow:0 0 6px var(--green);animation:blink 2s infinite;}
-@keyframes blink{0%,100%{opacity:1}50%{opacity:0.3}}
-.clock{font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:1px;}
-.alert-badge{background:var(--red);color:#fff;font-family:var(--disp);font-weight:700;font-size:12px;padding:3px 12px;border-radius:2px;letter-spacing:1px;animation:ablink 1.8s infinite;}
-@keyframes ablink{0%,100%{box-shadow:0 0 12px rgba(240,62,62,0.4)}50%{box-shadow:0 0 24px rgba(240,62,62,0.7)}}
+/* TOPBAR */
+.topbar{flex-shrink:0;height:52px;display:flex;align-items:center;border-bottom:1px solid var(--border);background:var(--s1);}
+.logo{display:flex;align-items:center;gap:9px;padding:0 22px;border-right:1px solid var(--border);height:100%;}
+.lm{width:28px;height:28px;border-radius:6px;background:var(--accent);display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0;}
+.lt{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--bright);}
+.ls{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);margin-top:1px;}
+.cpills{display:flex;align-items:center;gap:2px;padding:0 14px;height:100%;border-right:1px solid var(--border);}
+.cp{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;padding:5px 13px;border-radius:4px;cursor:pointer;color:var(--muted);border:1px solid transparent;transition:all 0.18s;text-transform:uppercase;}
+.cp:hover{color:var(--text);background:var(--s3);}
+.cp.on{color:var(--accent);background:var(--accent-dim);border-color:rgba(0,194,168,0.25);}
+.cp.heavy.on{color:var(--amber);background:var(--amber-dim);border-color:rgba(255,170,0,0.25);}
+.cp.car.on{color:var(--blue);background:var(--blue-dim);border-color:rgba(77,157,224,0.25);}
+.tcounts{display:flex;height:100%;}
+.tc{display:flex;align-items:center;gap:9px;padding:0 18px;border-right:1px solid var(--border);}
+.tcdot{width:7px;height:7px;border-radius:50%;}
+.tcn{font-family:var(--disp);font-weight:700;font-size:20px;line-height:1;}
+.tcl{font-family:var(--mono);font-size:7px;letter-spacing:1.5px;color:var(--muted);text-transform:uppercase;}
+.tmeta{margin-left:auto;display:flex;align-items:center;gap:16px;padding:0 20px;}
+.live{display:flex;align-items:center;gap:6px;font-family:var(--mono);font-size:9px;color:var(--accent);letter-spacing:2px;}
+.ld{width:6px;height:6px;border-radius:50%;background:var(--accent);box-shadow:0 0 6px var(--accent);animation:p 2s infinite;}
+@keyframes p{0%,100%{opacity:1}50%{opacity:.3}}
+.clk{font-family:var(--mono);font-size:10px;color:var(--muted);}
 
-/* ── MAIN LAYOUT ── */
-.body{flex:1;display:grid;grid-template-columns:220px 1fr 310px;overflow:hidden;}
+/* MAIN */
+.main{flex:1;display:grid;grid-template-columns:196px 1fr 252px;overflow:hidden;}
 
-/* ── LEFT SIDEBAR ── */
-.lsb{border-right:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden;}
-.lsb-s{padding:12px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.sec-h{font-family:var(--mono);font-size:8px;letter-spacing:3px;color:var(--dim);text-transform:uppercase;margin-bottom:10px;}
+/* LEFT */
+.lp{border-right:1px solid var(--border);background:var(--s1);display:flex;flex-direction:column;overflow:hidden;}
+.lsec{padding:14px 14px 12px;border-bottom:1px solid var(--border2);flex-shrink:0;}
+.sh{font-family:var(--mono);font-size:7px;letter-spacing:3px;color:var(--muted);text-transform:uppercase;margin-bottom:10px;}
+.hrow{display:flex;flex-direction:column;gap:4px;}
+.hp{display:flex;align-items:center;justify-content:space-between;padding:6px 9px;border-radius:4px;border-left:2px solid transparent;background:var(--s2);}
+.hp.ok{border-left-color:var(--accent);}
+.hp.wa{border-left-color:var(--amber);}
+.hp.cr{border-left-color:var(--red);}
+.hpl{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.hpv{font-family:var(--disp);font-weight:700;font-size:15px;}
+.ml{flex:1;overflow-y:auto;padding:10px 12px;display:flex;flex-direction:column;gap:2px;}
+.ml::-webkit-scrollbar{width:2px;}.ml::-webkit-scrollbar-thumb{background:var(--s3);}
+.mr{display:flex;align-items:center;justify-content:space-between;padding:5px 8px;border-radius:3px;cursor:pointer;transition:background 0.15s;border-left:2px solid transparent;}
+.mr:hover{background:var(--s3);}
+.mr.on{background:var(--s2);border-left-color:var(--amber);}
+.mrn{font-family:var(--mono);font-size:9px;color:var(--text);}
+.mrc{font-family:var(--disp);font-weight:700;font-size:12px;}
 
-/* Class tabs */
-.class-tabs{display:flex;flex-direction:column;gap:4px;}
-.ctab{display:flex;align-items:center;gap:10px;padding:8px 10px;border-radius:3px;border:1px solid transparent;cursor:pointer;transition:all 0.2s;background:rgba(255,255,255,0.02);}
-.ctab:hover{background:rgba(255,255,255,0.05);}
-.ctab.active-heavy{background:rgba(245,159,0,0.08);border-color:rgba(245,159,0,0.3);}
-.ctab.active-car{background:rgba(51,154,240,0.08);border-color:rgba(51,154,240,0.3);}
-.ctab.active-two{background:rgba(32,201,151,0.08);border-color:rgba(32,201,151,0.3);}
-.ctab.active-all{background:rgba(255,255,255,0.06);border-color:rgba(255,255,255,0.15);}
-.ctab-icon{font-size:16px;width:20px;text-align:center;}
-.ctab-info{flex:1;}
-.ctab-name{font-family:var(--disp);font-weight:600;font-size:12px;letter-spacing:1px;color:var(--text);}
-.ctab-sub{font-family:var(--mono);font-size:8px;color:var(--dim);letter-spacing:1px;}
-.ctab-cnt{font-family:var(--disp);font-weight:700;font-size:14px;}
-
-/* Fleet counters */
-.f-counters{display:grid;grid-template-columns:1fr 1fr;gap:5px;}
-.fc{background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:7px;text-align:center;}
-.fc-v{font-family:var(--disp);font-weight:700;font-size:22px;line-height:1;margin-bottom:1px;}
-.fc-l{font-family:var(--mono);font-size:7px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;}
-
-/* Alert categories */
-.cat-list{display:flex;flex-direction:column;gap:3px;}
-.catr{display:flex;align-items:center;justify-content:space-between;padding:4px 8px;border-radius:2px;font-family:var(--mono);font-size:9px;cursor:pointer;border-left:3px solid transparent;background:rgba(255,255,255,0.015);transition:all 0.15s;}
-.catr:hover{background:rgba(255,255,255,0.04);}
-.catr.sel{border-left-color:var(--amber);background:rgba(245,159,0,0.07);}
-.catr-n{color:var(--text);}
-.catr-c{font-weight:bold;}
-
-/* Thresholds */
-.thr-grid{display:grid;grid-template-columns:1fr 1fr;gap:4px;margin-top:8px;}
-.thr{background:var(--panel2);border:1px solid var(--border);border-radius:2px;padding:5px 7px;}
-.thr-n{font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:1px;margin-bottom:1px;}
-.thr-v{font-family:var(--disp);font-weight:700;font-size:12px;color:var(--amber);}
-.lsb-scroll{flex:1;overflow-y:auto;padding:10px 14px;}
-.lsb-scroll::-webkit-scrollbar{width:3px;}.lsb-scroll::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
-
-/* ── CENTER ── */
-.center{display:flex;flex-direction:column;overflow:hidden;}
-.filter-bar{flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--border);display:flex;align-items:center;gap:7px;background:var(--panel);}
-.fb{font-family:var(--disp);font-weight:600;font-size:11px;letter-spacing:1.5px;padding:5px 13px;border:1px solid var(--border);background:transparent;color:var(--dim);border-radius:2px;cursor:pointer;transition:all 0.2s;text-transform:uppercase;}
-.fb:hover{color:var(--text);border-color:var(--glow);}
-.fb.fa.act{border-color:var(--text);color:var(--text);background:rgba(255,255,255,0.04);}
-.fb.fc.act{border-color:var(--red);color:var(--red);background:rgba(240,62,62,0.07);}
-.fb.fw.act{border-color:var(--amber);color:var(--amber);background:rgba(245,159,0,0.07);}
-.fb.fp.act{border-color:var(--blue);color:var(--blue);background:rgba(51,154,240,0.07);}
-.fb.fr.act{border-color:var(--green-d);color:var(--green);}
-.fsep{flex:1;}
-.srch-box{display:flex;align-items:center;gap:6px;background:var(--panel2);border:1px solid var(--border);border-radius:2px;padding:5px 10px;}
-.srch-box input{background:transparent;border:none;outline:none;font-family:var(--mono);font-size:10px;color:var(--text);width:150px;}
-.srch-box input::placeholder{color:var(--dim);}
-.li{display:flex;align-items:center;gap:5px;font-family:var(--mono);font-size:9px;color:var(--green);letter-spacing:1px;}
-
-/* Alert feed */
-.feed{flex:1;overflow-y:auto;padding:8px 16px;display:flex;flex-direction:column;gap:5px;}
-.feed::-webkit-scrollbar{width:3px;}.feed::-webkit-scrollbar-thumb{background:var(--border);}
-.no-a{text-align:center;padding:60px;font-family:var(--mono);font-size:11px;color:var(--dim);letter-spacing:2px;}
-.no-a .ico{font-size:36px;margin-bottom:12px;opacity:0.3;}
+/* CENTER */
+.cp2{display:flex;flex-direction:column;overflow:hidden;}
+.fbar{flex-shrink:0;padding:8px 16px;border-bottom:1px solid var(--border);background:var(--s1);display:flex;align-items:center;gap:5px;}
+.fb{font-family:var(--mono);font-size:9px;letter-spacing:1.5px;padding:5px 12px;border-radius:4px;border:1px solid var(--border);background:transparent;color:var(--muted);cursor:pointer;transition:all 0.15s;text-transform:uppercase;}
+.fb:hover{color:var(--text);}
+.fb.on{color:var(--bright);background:var(--s3);border-color:rgba(255,255,255,0.12);}
+.fb.cr.on{color:var(--red);background:var(--red-dim);border-color:rgba(255,71,87,0.2);}
+.fb.wa.on{color:var(--amber);background:var(--amber-dim);border-color:rgba(255,170,0,0.2);}
+.fb.pr.on{color:var(--blue);background:var(--blue-dim);border-color:rgba(77,157,224,0.2);}
+.sp{flex:1;}
+.srch{display:flex;align-items:center;gap:7px;background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:5px 10px;}
+.srch input{background:transparent;border:none;outline:none;font-family:var(--mono);font-size:9px;color:var(--text);width:140px;}
+.srch input::placeholder{color:var(--muted);}
+.feed{flex:1;overflow-y:auto;padding:10px 16px;display:flex;flex-direction:column;gap:5px;}
+.feed::-webkit-scrollbar{width:3px;}.feed::-webkit-scrollbar-thumb{background:var(--s3);}
+.empty{text-align:center;padding:80px 20px;font-family:var(--mono);font-size:10px;color:var(--muted);letter-spacing:2px;}
+.empty-i{font-size:28px;margin-bottom:12px;opacity:.25;}
 
 /* Alert cards */
-.acard{background:var(--panel);border:1px solid var(--border);border-radius:4px;padding:9px 12px;display:grid;grid-template-columns:90px 1fr auto;gap:0 10px;align-items:start;cursor:pointer;transition:transform 0.15s,border-color 0.15s;animation:ain 0.25s ease-out;}
-@keyframes ain{from{opacity:0;transform:translateX(-8px)}to{opacity:1;transform:translateX(0)}}
-.acard:hover{transform:translateX(2px);border-color:var(--glow);}
-.acard.CRITICAL{border-left:3px solid var(--red);background:linear-gradient(90deg,rgba(240,62,62,0.05)0%,var(--panel)55%);}
-.acard.WARNING{border-left:3px solid var(--amber);background:linear-gradient(90deg,rgba(245,159,0,0.05)0%,var(--panel)55%);}
-.acard.LOG{border-left:3px solid var(--blue);background:linear-gradient(90deg,rgba(51,154,240,0.04)0%,var(--panel)55%);}
-.acard.resolved{opacity:0.35;border-left-color:var(--border) !important;background:var(--panel);}
-.a-left{display:flex;flex-direction:column;gap:4px;}
-.sev-tag{font-family:var(--disp);font-weight:700;font-size:9px;letter-spacing:1.5px;padding:2px 6px;border-radius:2px;text-transform:uppercase;width:fit-content;}
-.sev-CRITICAL{background:var(--red-d);color:var(--red);border:1px solid var(--red);}
-.sev-WARNING{background:var(--amber-d);color:var(--amber);border:1px solid var(--amber);}
-.sev-LOG{background:var(--blue-d);color:var(--blue);border:1px solid var(--blue);}
-.layer-tag{font-family:var(--mono);font-size:7px;letter-spacing:1px;padding:2px 5px;border-radius:1px;width:fit-content;}
-.lt-CRITICAL{background:rgba(240,62,62,0.12);color:var(--red);}
-.lt-ANOMALY{background:rgba(245,159,0,0.12);color:var(--amber);}
-.lt-PREDICTIVE{background:rgba(51,154,240,0.12);color:var(--blue);}
-.score-bar-w{width:100%;height:3px;background:rgba(255,255,255,0.06);border-radius:1px;overflow:hidden;margin-top:2px;}
-.score-bar{height:100%;border-radius:1px;}
-.a-body{min-width:0;}
-.a-mod{font-family:var(--disp);font-weight:600;font-size:13px;color:var(--bright);letter-spacing:0.5px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.a-msg{font-family:var(--body);font-size:11px;color:var(--dim);margin-bottom:4px;line-height:1.4;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
-.a-meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;}
-.am{font-family:var(--mono);font-size:9px;color:var(--dim);display:flex;align-items:center;gap:3px;}
-.am .v{color:var(--text);}
-/* Vehicle class color dots */
-.vtype-heavy{color:var(--heavy-c);}
-.vtype-car{color:var(--car-c);}
-.vtype-two{color:var(--two-c);}
-.a-right{display:flex;flex-direction:column;gap:4px;align-items:flex-end;flex-shrink:0;}
-.res-btn{font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:2px 7px;border:1px solid var(--green-d);background:transparent;color:var(--green);border-radius:2px;cursor:pointer;transition:all 0.15s;}
-.res-btn:hover{background:rgba(55,178,77,0.1);border-color:var(--green);}
-.ago-txt{font-family:var(--mono);font-size:8px;color:var(--dim);}
+.ac{background:var(--s1);border:1px solid var(--border);border-radius:6px;padding:10px 13px;display:grid;grid-template-columns:68px 1fr auto;gap:0 11px;align-items:start;cursor:pointer;transition:all 0.15s;animation:fi .2s ease;}
+@keyframes fi{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:translateY(0)}}
+.ac:hover{border-color:rgba(255,255,255,0.12);transform:translateX(2px);}
+.ac.CRITICAL{border-left:2px solid var(--red);}
+.ac.WARNING{border-left:2px solid var(--amber);}
+.ac.LOG{border-left:2px solid var(--blue);}
+.ac.resolved{opacity:.28;}
+.acl{display:flex;flex-direction:column;gap:4px;padding-top:1px;}
+.stag{font-family:var(--mono);font-size:8px;letter-spacing:1px;padding:2px 5px;border-radius:3px;width:fit-content;}
+.st-CRITICAL{background:var(--red-dim);color:var(--red);}
+.st-WARNING{background:var(--amber-dim);color:var(--amber);}
+.st-LOG{background:var(--blue-dim);color:var(--blue);}
+.ltag{font-family:var(--mono);font-size:7px;color:var(--muted);}
+.sbw{height:2px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden;margin-top:2px;}
+.sb{height:100%;border-radius:1px;transition:width .4s;}
+.acb{min-width:0;}
+.acm{font-family:var(--disp);font-weight:700;font-size:13px;color:var(--bright);margin-bottom:2px;}
+.acmsg{font-size:11px;color:var(--muted);line-height:1.45;margin-bottom:5px;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;overflow:hidden;}
+.acmeta{display:flex;align-items:center;gap:9px;}
+.am{font-family:var(--mono);font-size:8px;color:var(--muted);display:flex;align-items:center;gap:3px;}
+.am b{color:var(--text);}
+.acr{display:flex;flex-direction:column;gap:5px;align-items:flex-end;flex-shrink:0;}
+.rbtn{font-family:var(--mono);font-size:8px;padding:3px 9px;border-radius:3px;border:1px solid rgba(0,194,168,0.2);background:transparent;color:var(--accent);cursor:pointer;letter-spacing:1px;transition:all .15s;}
+.rbtn:hover{background:var(--accent-dim);}
+.ago{font-family:var(--mono);font-size:8px;color:var(--muted);}
 
-/* ── RIGHT PANEL ── */
-.rsb{border-left:1px solid var(--border);background:var(--panel);display:flex;flex-direction:column;overflow:hidden;}
-.rh{padding:10px 14px;border-bottom:1px solid var(--border);font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:2.5px;color:var(--dim);text-transform:uppercase;display:flex;align-items:center;justify-content:space-between;flex-shrink:0;}
-/* Gauges row */
-.gr{padding:10px 14px;border-bottom:1px solid var(--border);display:flex;justify-content:space-around;flex-shrink:0;}
-.g{text-align:center;}
-.g svg{display:block;margin:0 auto;}
-.gl{font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:1px;margin-top:2px;text-transform:uppercase;}
-/* Class-specific quick stats */
-.quick-stats{padding:10px 14px;border-bottom:1px solid var(--border);flex-shrink:0;}
-.qs-grid{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:8px;}
-.qs{background:var(--panel2);border:1px solid var(--border);border-radius:2px;padding:6px 8px;}
-.qs-v{font-family:var(--disp);font-weight:700;font-size:16px;line-height:1;margin-bottom:1px;}
-.qs-l{font-family:var(--mono);font-size:7px;color:var(--dim);letter-spacing:1px;text-transform:uppercase;}
-/* vehicle mini-grid */
-.vgrid{display:grid;grid-template-columns:1fr 1fr 1fr;gap:4px;padding:8px 10px;overflow-y:auto;flex:1;}
-.vgrid::-webkit-scrollbar{width:3px;}.vgrid::-webkit-scrollbar-thumb{background:var(--border);}
-.vc{background:var(--panel2);border:1px solid var(--border);border-radius:2px;padding:5px 6px;cursor:pointer;transition:all 0.15s;position:relative;overflow:hidden;}
-.vc::before{content:'';position:absolute;top:0;left:0;right:0;height:2px;}
-.vc.ok::before{background:var(--green);}
-.vc.warn::before{background:var(--amber);}
-.vc.crit::before{background:var(--red);}
-.vc:hover{border-color:var(--glow);transform:scale(1.03);}
-.vc-id{font-family:var(--mono);font-size:8px;color:var(--text);margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;}
-.vc-t{font-family:var(--disp);font-weight:600;font-size:7px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:3px;}
-.hbw{height:2px;background:rgba(255,255,255,0.05);border-radius:1px;overflow:hidden;margin-bottom:2px;}
-.hb{height:100%;border-radius:1px;transition:width 0.5s;}
-.vc-ac{font-family:var(--mono);font-size:7px;color:var(--dim);}
-.vc-ac .n{color:var(--red);font-weight:bold;}
+/* RIGHT */
+.rp{border-left:1px solid var(--border);background:var(--s1);display:flex;flex-direction:column;overflow:hidden;}
+.rh{padding:14px 16px 12px;border-bottom:1px solid var(--border2);font-family:var(--disp);font-weight:700;font-size:11px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.grow{padding:16px;border-bottom:1px solid var(--border2);display:grid;grid-template-columns:1fr 1fr;gap:12px;}
+.gbox{display:flex;flex-direction:column;align-items:center;gap:5px;}
+.glbl{font-family:var(--mono);font-size:7px;letter-spacing:2px;color:var(--muted);text-transform:uppercase;}
+.stats-s{padding:12px 16px;border-bottom:1px solid var(--border2);}
+.srow{display:flex;align-items:center;justify-content:space-between;padding:6px 0;border-bottom:1px solid var(--border2);}
+.srow:last-child{border:none;}
+.srl{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.srv{font-family:var(--disp);font-weight:700;font-size:14px;}
+.spark-s{padding:12px 16px;}
+.spbars{display:flex;align-items:flex-end;gap:2px;height:28px;margin-top:6px;}
+.spb{flex:1;border-radius:2px 2px 0 0;min-height:2px;transition:height .5s;}
 
-/* ── MODAL ── */
-.mov{position:fixed;inset:0;background:rgba(3,5,12,0.94);z-index:500;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(6px);opacity:0;pointer-events:none;transition:opacity 0.2s;}
+/* MODAL */
+.mov{position:fixed;inset:0;background:rgba(8,10,18,0.92);z-index:500;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;backdrop-filter:blur(4px);}
 .mov.open{opacity:1;pointer-events:all;}
-.modal{background:var(--panel);border:1px solid var(--glow);border-radius:6px;width:580px;max-width:95vw;max-height:88vh;overflow-y:auto;box-shadow:0 24px 80px rgba(0,0,0,0.9);transform:translateY(16px);transition:transform 0.2s;}
+.modal{background:var(--s1);border:1px solid var(--s3);border-radius:8px;width:500px;max-width:94vw;max-height:85vh;overflow-y:auto;transform:translateY(12px);transition:transform .2s;box-shadow:0 32px 80px rgba(0,0,0,.8);}
 .mov.open .modal{transform:translateY(0);}
-.mh{padding:16px 20px;border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;}
-.mt{font-family:var(--disp);font-weight:800;font-size:17px;letter-spacing:2px;text-transform:uppercase;color:var(--bright);}
-.mcl{background:none;border:none;color:var(--dim);font-size:16px;cursor:pointer;font-family:var(--mono);}
-.mcl:hover{color:var(--red);}
-.mb{padding:18px 20px;}
-.dg3{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
-.dg4{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-bottom:10px;}
-.dc{background:var(--panel2);border:1px solid var(--border);border-radius:3px;padding:8px 10px;}
-.dcl{font-family:var(--mono);font-size:8px;letter-spacing:1.5px;color:var(--dim);text-transform:uppercase;margin-bottom:3px;}
-.dcv{font-family:var(--disp);font-weight:700;font-size:18px;}
-.dcu{font-family:var(--mono);font-size:9px;color:var(--dim);margin-left:2px;}
-.fault-box{font-size:12px;line-height:1.65;color:var(--dim);padding:11px 13px;background:var(--panel2);border:1px solid var(--border);border-radius:3px;border-left:3px solid var(--amber);margin-top:10px;}
-.fault-box strong{font-family:var(--disp);font-size:12px;letter-spacing:1px;color:var(--amber);}
+.mh{padding:16px 18px;border-bottom:1px solid var(--border);display:flex;align-items:flex-start;justify-content:space-between;gap:12px;}
+.mt{font-family:var(--disp);font-weight:800;font-size:15px;color:var(--bright);}
+.ms{font-family:var(--mono);font-size:9px;color:var(--muted);margin-top:2px;letter-spacing:1px;}
+.mc{background:none;border:none;color:var(--muted);font-size:14px;cursor:pointer;}
+.mc:hover{color:var(--red);}
+.mbody{padding:16px 18px;}
+.dg3{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-bottom:10px;}
+.dg2{display:grid;grid-template-columns:repeat(2,1fr);gap:6px;margin-bottom:10px;}
+.dc{background:var(--s2);border:1px solid var(--border);border-radius:4px;padding:8px 10px;}
+.dcl{font-family:var(--mono);font-size:7px;color:var(--muted);letter-spacing:1.5px;text-transform:uppercase;margin-bottom:4px;}
+.dcv{font-family:var(--disp);font-weight:700;font-size:17px;line-height:1;}
+.dcu{font-family:var(--mono);font-size:9px;color:var(--muted);}
+.fb2{padding:11px 13px;background:var(--s2);border:1px solid var(--border);border-radius:4px;border-left:3px solid var(--amber);font-size:12px;line-height:1.65;color:var(--muted);margin-top:2px;}
+.fb2 strong{font-family:var(--disp);font-size:11px;letter-spacing:1px;color:var(--amber);display:block;margin-bottom:6px;}
 
-/* Scrollbar global */
-::-webkit-scrollbar{width:3px;}
-::-webkit-scrollbar-track{background:transparent;}
-::-webkit-scrollbar-thumb{background:var(--border);border-radius:2px;}
+::-webkit-scrollbar{width:3px;}::-webkit-scrollbar-thumb{background:var(--s3);}
 </style>
 </head>
-<body class="z1">
+<body>
 
-<!-- TOPBAR -->
-<div class="topbar z1">
+<div class="topbar">
   <div class="logo">
-    <div class="logo-box">⚡</div>
-    <div>
-      <div class="logo-name">FleetSentinel</div>
-      <div class="logo-ver">PREDICTIVE SAFETY SYSTEM v3.0 · CHENNAI</div>
+    <div class="lm">⚡</div>
+    <div><div class="lt">FleetSentinel</div><div class="ls">PREDICTIVE SAFETY · CHENNAI</div></div>
+  </div>
+  <div class="cpills">
+    <div class="cp on" id="cp-ALL" onclick="setCls('ALL')">All · 100</div>
+    <div class="cp heavy" id="cp-HEAVY" onclick="setCls('HEAVY')">🚛 Heavy · 50</div>
+    <div class="cp car" id="cp-CAR" onclick="setCls('CAR')">🚗 Car · 30</div>
+    <div class="cp" id="cp-TWO" onclick="setCls('TWO')">🛵 Two-wheel · 20</div>
+  </div>
+  <div class="tcounts">
+    <div class="tc">
+      <div class="tcdot" style="background:var(--red);box-shadow:0 0 6px var(--red)"></div>
+      <div><div class="tcn" style="color:var(--red)" id="tc-cr">—</div><div class="tcl">CRITICAL</div></div>
+    </div>
+    <div class="tc">
+      <div class="tcdot" style="background:var(--amber)"></div>
+      <div><div class="tcn" style="color:var(--amber)" id="tc-wa">—</div><div class="tcl">WARNING</div></div>
+    </div>
+    <div class="tc">
+      <div class="tcdot" style="background:var(--muted)"></div>
+      <div><div class="tcn" id="tc-ok">—</div><div class="tcl">NOMINAL</div></div>
     </div>
   </div>
-
-  <div class="top-stats">
-    <div class="ts active" id="ts-all" onclick="setClassFilter('ALL',this)">
-      <div class="ts-val" style="color:var(--bright)" id="ts-total">100</div>
-      <div class="ts-lbl">ALL VEHICLES</div>
-    </div>
-    <div class="ts" id="ts-heavy" onclick="setClassFilter('HEAVY',this)">
-      <div class="ts-val" style="color:var(--heavy-c)">50</div>
-      <div class="ts-lbl">🚛 HEAVY</div>
-    </div>
-    <div class="ts" id="ts-car" onclick="setClassFilter('CAR',this)">
-      <div class="ts-val" style="color:var(--car-c)">30</div>
-      <div class="ts-lbl">🚗 CAR</div>
-    </div>
-    <div class="ts" id="ts-two" onclick="setClassFilter('TWO',this)">
-      <div class="ts-val" style="color:var(--two-c)">20</div>
-      <div class="ts-lbl">🛵 TWO-WHEEL</div>
-    </div>
-    <div class="ts" id="ts-crit" style="border-left:1px solid var(--border)">
-      <div class="ts-val" style="color:var(--red)" id="ts-crit-v">—</div>
-      <div class="ts-lbl">CRITICAL</div>
-    </div>
-    <div class="ts">
-      <div class="ts-val" style="color:var(--amber)" id="ts-warn-v">—</div>
-      <div class="ts-lbl">WARNING</div>
-    </div>
-    <div class="ts">
-      <div class="ts-val" style="color:var(--green)" id="ts-ok-v">—</div>
-      <div class="ts-lbl">NOMINAL</div>
-    </div>
-    <div class="ts">
-      <div class="ts-val" style="color:var(--purple)" id="ts-alerts-v">—</div>
-      <div class="ts-lbl">ACTIVE ALERTS</div>
-    </div>
-  </div>
-
-  <div class="top-right">
-    <div class="live-pill"><div class="ld"></div> LIVE</div>
-    <div class="clock" id="clk">—</div>
-    <div class="alert-badge" id="badge">0 ALERTS</div>
+  <div class="tmeta">
+    <div class="live"><div class="ld"></div>LIVE</div>
+    <div class="clk" id="clk">—</div>
   </div>
 </div>
 
-<!-- BODY -->
-<div class="body z1">
-
-  <!-- LEFT SIDEBAR -->
-  <div class="lsb">
-    <div class="lsb-s">
-      <div class="sec-h">Vehicle Class</div>
-      <div class="class-tabs">
-        <div class="ctab active-all" id="ct-ALL" onclick="setClassFilter('ALL',null,this)">
-          <span class="ctab-icon">🌐</span>
-          <div class="ctab-info"><div class="ctab-name" style="color:var(--bright)">All Fleet</div><div class="ctab-sub">100 VEHICLES · 7 TYPES</div></div>
-          <span class="ctab-cnt" style="color:var(--bright)" id="ct-all-cnt">100</span>
-        </div>
-        <div class="ctab" id="ct-HEAVY" onclick="setClassFilter('HEAVY',null,this)">
-          <span class="ctab-icon">🚛</span>
-          <div class="ctab-info"><div class="ctab-name" style="color:var(--heavy-c)">Heavy</div><div class="ctab-sub">TRUCK·BUS·VAN</div></div>
-          <span class="ctab-cnt" style="color:var(--heavy-c)">50</span>
-        </div>
-        <div class="ctab" id="ct-CAR" onclick="setClassFilter('CAR',null,this)">
-          <span class="ctab-icon">🚗</span>
-          <div class="ctab-info"><div class="ctab-name" style="color:var(--car-c)">Car / Pickup</div><div class="ctab-sub">CAR·PICKUP</div></div>
-          <span class="ctab-cnt" style="color:var(--car-c)">30</span>
-        </div>
-        <div class="ctab" id="ct-TWO" onclick="setClassFilter('TWO',null,this)">
-          <span class="ctab-icon">🛵</span>
-          <div class="ctab-info"><div class="ctab-name" style="color:var(--two-c)">Two-Wheeler</div><div class="ctab-sub">SCOOTY·BIKE</div></div>
-          <span class="ctab-cnt" style="color:var(--two-c)">20</span>
-        </div>
+<div class="main">
+  <div class="lp">
+    <div class="lsec">
+      <div class="sh">Fleet Health</div>
+      <div class="hrow">
+        <div class="hp ok"><span class="hpl">Healthy</span><span class="hpv" style="color:var(--accent)" id="lp-ok">—</span></div>
+        <div class="hp wa"><span class="hpl">Warning</span><span class="hpv" style="color:var(--amber)" id="lp-wa">—</span></div>
+        <div class="hp cr"><span class="hpl">Critical</span><span class="hpv" style="color:var(--red)" id="lp-cr">—</span></div>
       </div>
     </div>
-
-    <div class="lsb-s">
-      <div class="sec-h">Fleet Health</div>
-      <div class="f-counters">
-        <div class="fc"><div class="fc-v" style="color:var(--green)" id="fc-ok">—</div><div class="fc-l">HEALTHY</div></div>
-        <div class="fc"><div class="fc-v" style="color:var(--amber)" id="fc-warn">—</div><div class="fc-l">WARNING</div></div>
-        <div class="fc"><div class="fc-v" style="color:var(--red)" id="fc-crit">—</div><div class="fc-l">CRITICAL</div></div>
-        <div class="fc"><div class="fc-v" style="color:var(--blue)" id="fc-health">—</div><div class="fc-l">AVG HEALTH</div></div>
-      </div>
-    </div>
-
-    <div class="lsb-s">
-      <div class="sec-h">Alert Categories</div>
-      <div class="cat-list" id="cat-list"></div>
-    </div>
-
-    <div class="lsb-scroll">
-      <div class="sec-h">Thresholds</div>
-      <div class="thr-grid">
-        <div class="thr"><div class="thr-n">ENGINE</div><div class="thr-v">&gt;105°C</div></div>
-        <div class="thr"><div class="thr-n">OIL PSI</div><div class="thr-v">&lt;50%</div></div>
-        <div class="thr"><div class="thr-n">AIR BRAKE</div><div class="thr-v">&lt;60 PSI</div></div>
-        <div class="thr"><div class="thr-n">DPF BP</div><div class="thr-v">&gt;10 kPa</div></div>
-        <div class="thr"><div class="thr-n">VIBRATION</div><div class="thr-v">&gt;3.0 g</div></div>
-        <div class="thr"><div class="thr-n">BATTERY</div><div class="thr-v">&lt;7.5 V</div></div>
-        <div class="thr"><div class="thr-n">MISFIRE</div><div class="thr-v">std&gt;1.2ms</div></div>
-        <div class="thr"><div class="thr-n">TIP-OVER</div><div class="thr-v">&gt;70° lean</div></div>
-        <div class="thr"><div class="thr-n">TYRE DROP</div><div class="thr-v">&gt;20%</div></div>
-        <div class="thr"><div class="thr-n">FUEL</div><div class="thr-v">&lt;10%</div></div>
-        <div class="thr"><div class="thr-n">OVERSPEED</div><div class="thr-v">115%</div></div>
-        <div class="thr"><div class="thr-n">AXLE</div><div class="thr-v">GVWR</div></div>
-      </div>
-    </div>
+    <div class="lsec" style="flex-shrink:0"><div class="sh">Alert Modules</div></div>
+    <div class="ml" id="modlist"></div>
   </div>
 
-  <!-- CENTER FEED -->
-  <div class="center">
-    <div class="filter-bar">
-      <button class="fb fa act" onclick="setSevFilter('ALL',this)">ALL</button>
-      <button class="fb fc" onclick="setSevFilter('CRITICAL',this)">⬥ CRITICAL</button>
-      <button class="fb fw" onclick="setSevFilter('WARNING',this)">⬥ WARNING</button>
-      <button class="fb fp" onclick="setSevFilter('LOG',this)">⬥ PREDICTIVE</button>
-      <button class="fb fr" onclick="setSevFilter('RESOLVED',this)">✓ RESOLVED</button>
-      <div class="fsep"></div>
-      <div class="srch-box">
-        <span style="color:var(--dim);font-size:11px">⌕</span>
-        <input id="srch" type="text" placeholder="SEARCH ID / TYPE / MODULE..." oninput="renderFeed()">
+  <div class="cp2">
+    <div class="fbar">
+      <button class="fb cr" onclick="setSev('CRITICAL',this)">Critical</button>
+      <button class="fb wa" onclick="setSev('WARNING',this)">Warning</button>
+      <button class="fb pr" onclick="setSev('LOG',this)">Predictive</button>
+      <button class="fb" onclick="setSev('RESOLVED',this)">Resolved</button>
+      <div class="sp"></div>
+      <div class="srch">
+        <span style="color:var(--muted);font-size:12px">⌕</span>
+        <input type="text" id="srch" placeholder="Search vehicle / module..." oninput="renderFeed()">
       </div>
-      <div class="li"><div class="ld"></div>STREAMING</div>
     </div>
     <div class="feed" id="feed">
-      <div class="no-a"><div class="ico">📡</div>INITIALIZING DETECTION ENGINE...</div>
+      <div class="empty"><div class="empty-i">📡</div>INITIALIZING...</div>
     </div>
   </div>
 
-  <!-- RIGHT PANEL -->
-  <div class="rsb">
-    <div class="rh">
-      <span id="rh-title">Fleet Overview</span>
-      <span style="font-size:8px;color:var(--dim)" id="rh-cnt">100</span>
+  <div class="rp">
+    <div class="rh">Fleet Vitals</div>
+    <div class="grow">
+      <div class="gbox">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5.5"/>
+          <circle id="g-h" cx="44" cy="44" r="34" fill="none" stroke="var(--accent)" stroke-width="5.5"
+            stroke-dasharray="213.6" stroke-dashoffset="53.4" stroke-linecap="round"
+            transform="rotate(-90 44 44)" style="transition:all .7s"/>
+          <text x="44" y="48" text-anchor="middle" font-family="Syne" font-size="15" font-weight="700" fill="#eef3fa" id="g-ht">—</text>
+        </svg>
+        <div class="glbl">Health</div>
+      </div>
+      <div class="gbox">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5.5"/>
+          <circle id="g-d" cx="44" cy="44" r="34" fill="none" stroke="var(--blue)" stroke-width="5.5"
+            stroke-dasharray="213.6" stroke-dashoffset="53.4" stroke-linecap="round"
+            transform="rotate(-90 44 44)" style="transition:all .7s"/>
+          <text x="44" y="48" text-anchor="middle" font-family="Syne" font-size="15" font-weight="700" fill="#eef3fa" id="g-dt">—</text>
+        </svg>
+        <div class="glbl">Driver</div>
+      </div>
+      <div class="gbox">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5.5"/>
+          <circle id="g-f" cx="44" cy="44" r="34" fill="none" stroke="var(--amber)" stroke-width="5.5"
+            stroke-dasharray="213.6" stroke-dashoffset="53.4" stroke-linecap="round"
+            transform="rotate(-90 44 44)" style="transition:all .7s"/>
+          <text x="44" y="48" text-anchor="middle" font-family="Syne" font-size="15" font-weight="700" fill="#eef3fa" id="g-ft">—</text>
+        </svg>
+        <div class="glbl">Fuel %</div>
+      </div>
+      <div class="gbox">
+        <svg width="88" height="88" viewBox="0 0 88 88">
+          <circle cx="44" cy="44" r="34" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="5.5"/>
+          <circle id="g-o" cx="44" cy="44" r="34" fill="none" stroke="var(--red)" stroke-width="5.5"
+            stroke-dasharray="213.6" stroke-dashoffset="53.4" stroke-linecap="round"
+            transform="rotate(-90 44 44)" style="transition:all .7s"/>
+          <text x="44" y="48" text-anchor="middle" font-family="Syne" font-size="15" font-weight="700" fill="#eef3fa" id="g-ot">—</text>
+        </svg>
+        <div class="glbl">Oil %</div>
+      </div>
     </div>
-    <!-- Gauges -->
-    <div class="gr">
-      <div class="g">
-        <svg width="60" height="60" viewBox="0 0 60 60">
-          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4.5"/>
-          <circle id="ga" cx="30" cy="30" r="24" fill="none" stroke="#37b24d" stroke-width="4.5" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 30 30)" style="transition:all 0.6s"/>
-          <text x="30" y="35" text-anchor="middle" font-family="Oxanium" font-size="13" font-weight="700" fill="#dceeff" id="ga-t">—</text>
-        </svg><div class="gl">HEALTH</div>
-      </div>
-      <div class="g">
-        <svg width="60" height="60" viewBox="0 0 60 60">
-          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4.5"/>
-          <circle id="gb" cx="30" cy="30" r="24" fill="none" stroke="#f59f00" stroke-width="4.5" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 30 30)" style="transition:all 0.6s"/>
-          <text x="30" y="35" text-anchor="middle" font-family="Oxanium" font-size="13" font-weight="700" fill="#dceeff" id="gb-t">—</text>
-        </svg><div class="gl">SAFETY</div>
-      </div>
-      <div class="g">
-        <svg width="60" height="60" viewBox="0 0 60 60">
-          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4.5"/>
-          <circle id="gc" cx="30" cy="30" r="24" fill="none" stroke="#339af0" stroke-width="4.5" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 30 30)" style="transition:all 0.6s"/>
-          <text x="30" y="35" text-anchor="middle" font-family="Oxanium" font-size="13" font-weight="700" fill="#dceeff" id="gc-t">—</text>
-        </svg><div class="gl">FUEL</div>
-      </div>
-      <div class="g">
-        <svg width="60" height="60" viewBox="0 0 60 60">
-          <circle cx="30" cy="30" r="24" fill="none" stroke="rgba(255,255,255,0.05)" stroke-width="4.5"/>
-          <circle id="gd" cx="30" cy="30" r="24" fill="none" stroke="#9775fa" stroke-width="4.5" stroke-dasharray="150.8" stroke-dashoffset="0" stroke-linecap="round" transform="rotate(-90 30 30)" style="transition:all 0.6s"/>
-          <text x="30" y="35" text-anchor="middle" font-family="Oxanium" font-size="13" font-weight="700" fill="#dceeff" id="gd-t">—</text>
-        </svg><div class="gl">DRIVER</div>
-      </div>
+    <div class="stats-s">
+      <div class="sh">Live Readings</div>
+      <div class="srow"><span class="srl">Avg Engine °C</span><span class="srv" id="sr-e">—</span></div>
+      <div class="srow"><span class="srl">Overspeed</span><span class="srv" id="sr-s">—</span></div>
+      <div class="srow"><span class="srl">Active Alerts</span><span class="srv" id="sr-a">—</span></div>
+      <div class="srow"><span class="srl">Maintenance Due</span><span class="srv" id="sr-m">—</span></div>
     </div>
-    <!-- Class quick stats (dynamic) -->
-    <div class="quick-stats">
-      <div class="sec-h" id="qs-title">FLEET DIAGNOSTICS</div>
-      <div class="qs-grid" id="qs-grid"></div>
+    <div class="spark-s">
+      <div class="sh">Alert Rate · last 30 ticks</div>
+      <div class="spbars" id="spbars"></div>
     </div>
-    <!-- Vehicle mini-grid -->
-    <div class="vgrid" id="vgrid"></div>
   </div>
 </div>
 
-<!-- MODAL -->
 <div class="mov" id="mov" onclick="closeMov(event)">
   <div class="modal">
     <div class="mh">
-      <div class="mt" id="m-title">ALERT DETAIL</div>
-      <button class="mcl" onclick="document.getElementById('mov').classList.remove('open')">✕</button>
+      <div><div class="mt" id="m-t">—</div><div class="ms" id="m-s">—</div></div>
+      <button class="mc" onclick="document.getElementById('mov').classList.remove('open')">✕</button>
     </div>
-    <div class="mb" id="m-body"></div>
+    <div class="mbody" id="m-b"></div>
   </div>
 </div>
 
 <script>
-// ════════════════════════════════════════════════════════════
-//  DETECTION ENGINE — full port of vehicle_safety_system_v3
-// ════════════════════════════════════════════════════════════
-class Win{constructor(n=20){this.b=[];this.n=n;}push(v){this.b.push(v);if(this.b.length>this.n)this.b.shift();return this;}mean(){return this.b.length?this.b.reduce((a,v)=>a+v,0)/this.b.length:0;}std(){if(this.b.length<2)return 0;const m=this.mean();return Math.sqrt(this.b.reduce((a,v)=>a+(v-m)**2,0)/this.b.length);}z(v){const s=this.std();return s>1e-9?(v-this.mean())/s:0;}slope(){const n=this.b.length;if(n<3)return 0;const mx=(n-1)/2,my=this.mean();const num=this.b.reduce((s,v,i)=>s+(i-mx)*(v-my),0);const den=this.b.reduce((s,_,i)=>s+(i-mx)**2,0);return den>0?num/den:0;}get len(){return this.b.length;}}
-class Gate{constructor(r=5){this.r=r;this.c=0;}update(ok){ok?this.c++:this.c=Math.max(0,this.c-1);return this.c>=this.r;}}
-const sc=(base,frames,cross,z=0)=>Math.min(100,Math.min(1,frames/20)*40+Math.min(1,Math.abs(base))*30+(cross?20:0)+Math.min(1,Math.abs(z)/4)*10);
+// ═══ DETECTION ENGINE ═══
+class W{constructor(n=20){this.b=[];this.n=n;}push(v){this.b.push(v);if(this.b.length>this.n)this.b.shift();return this;}mean(){return this.b.length?this.b.reduce((a,v)=>a+v,0)/this.b.length:0;}std(){if(this.b.length<2)return 0;const m=this.mean();return Math.sqrt(this.b.reduce((a,v)=>a+(v-m)**2,0)/this.b.length);}z(v){const s=this.std();return s>1e-9?(v-this.mean())/s:0;}slope(){const n=this.b.length;if(n<3)return 0;const mx=(n-1)/2,my=this.mean(),num=this.b.reduce((s,v,i)=>s+(i-mx)*(v-my),0),den=this.b.reduce((s,_,i)=>s+(i-mx)**2,0);return den>0?num/den:0;}get len(){return this.b.length;}}
+class G{constructor(r=5){this.r=r;this.c=0;}update(ok){ok?this.c++:this.c=Math.max(0,this.c-1);return this.c>=this.r;}}
+const sc=(b,f,cx,z=0)=>Math.min(100,Math.min(1,f/20)*40+Math.min(1,Math.abs(b))*30+(cx?20:0)+Math.min(1,Math.abs(z)/4)*10);
 const band=s=>s>=71?'CRITICAL':s>=31?'WARNING':'LOG';
 let _id=0;
 const mk=(mod,layer,score,msg,val,thr)=>({id:_id++,mod,layer,severity:band(score),score,msg,val,thr,ts:Date.now(),resolved:false});
 
-// ── Shared: Engine Temp ──
-function makeEngDet(){
-  const w=new Win(20),g=new Gate(5);
-  return function(s){
-    const t=s.coolant_temp;w.push(t);
-    if(t<70)return[];
-    if(t>=105){const v=sc(1,20,s.oil_temp>100,w.z(t));return[mk('ENGINE TEMP','CRITICAL',v,`Coolant ${t.toFixed(1)}°C — STOP VEHICLE NOW.`,t,105)];}
-    const alerts=[];
-    if(w.len>=5){
-      const slope=w.slope();
-      if(g.update(slope>=0.3)){const cross=s.oil_temp>95;alerts.push(mk('ENGINE TEMP','PREDICTIVE',sc(slope,g.c,cross,w.z(t)),`Temp rising ${slope.toFixed(2)}°C/frame. Oil corr: ${cross?'YES':'no'}.`,t,105));}
-      const exp=75+0.18*s.load+0.25*Math.max(0,s.ambient-20);
-      const delta=t-exp;
-      if(delta>=3.5){const score=sc(delta/10,g.c,s.oil_temp>exp+2,w.z(t));alerts.push(mk('ENGINE TEMP','ANOMALY',score,`Temp ${delta.toFixed(1)}°C above model (exp ${exp.toFixed(1)}°C).`,t,exp+3.5));}
-    }
-    return alerts;
-  };
-}
+const makeEng=()=>{const w=new W(20),g=new G(5);return s=>{const t=s.coolant;w.push(t);if(t<70)return[];if(t>=105)return[mk('ENGINE TEMP','CRITICAL',sc(1,20,s.oil_t>100,w.z(t)),`Coolant ${t.toFixed(1)}°C — stop vehicle.`,t,105)];const a=[];if(w.len>=5){const sl=w.slope();if(g.update(sl>=0.3))a.push(mk('ENGINE TEMP','PREDICTIVE',sc(sl,g.c,s.oil_t>95,w.z(t)),`Temp rising ${sl.toFixed(2)}°C/frame.`,t,105));const d=t-(75+0.18*s.load+0.25*12);if(d>=3.5)a.push(mk('ENGINE TEMP','ANOMALY',sc(d/10,g.c,false,w.z(t)),`${d.toFixed(1)}°C above thermal model.`,t,78.5));}return a;};};
+const makeOil=np=>{const w=new W(20),g=new G(3);return s=>{const p=s.oil_psi,r=p/np;w.push(p);if(g.update(r<0.5))return[mk('OIL PRESSURE','CRITICAL',sc(1-r,g.c,s.coolant>100,w.z(p)),`Oil ${p.toFixed(1)} PSI = ${(r*100).toFixed(0)}% — seizure risk.`,p,np*0.5)];if(w.len>=5&&r<0.70&&w.slope()<-0.05)return[mk('OIL PRESSURE','PREDICTIVE',sc(Math.abs(w.slope())/0.5,g.c,false,w.z(p)),`Oil trending ↓ ${Math.abs(w.slope()).toFixed(3)} PSI/frame.`,p,np*0.7)];return[];};};
+const makeVib=()=>{const bw=new W(50),tw=new W(20),g=new G(3);let spk=0;return s=>{const r=s.vib;bw.push(r);tw.push(r);const z=bw.z(r);if(r>=3.0)return[mk('VIBRATION','CRITICAL',sc(1,20,z>3,z),`RMS ${r.toFixed(2)}g — bearing failure risk.`,r,3.0)];const a=[];if(tw.len>=10){const sl=tw.slope();if(g.update(sl>=0.01))a.push(mk('VIBRATION','PREDICTIVE',sc(sl/0.05,g.c,z>1.5,z),`Vibration ↑ ${sl.toFixed(4)}g/frame.`,r,1.5));}if(z>2.5){spk++;if(spk>=3)a.push(mk('VIBRATION','ANOMALY',sc(z/4,spk,false,z),`${spk} spikes Z=${z.toFixed(2)}.`,r,bw.mean()+2.5*bw.std()));}else spk=Math.max(0,spk-1);return a;};};
+const makeTyre=(nf,nr)=>{const ns={FL:nf,FR:nf,RL:nr,RR:nr},ws={FL:new W(20),FR:new W(20),RL:new W(20),RR:new W(20)},gs={FL:new G(2),FR:new G(2),RL:new G(2),RR:new G(2)};return s=>{const t={FL:s.tfl,FR:s.tfr,RL:s.trl,RR:s.trr},a=[];for(const[k,v]of Object.entries(t)){const n=ns[k];ws[k].push(v);const r=v/n;if(gs[k].update(r<0.80)){const cx=Object.entries(t).some(([k2,v2])=>k2!==k&&v2/ns[k2]<0.85);a.push(mk(`TYRE [${k}]`,r<0.60?'CRITICAL':'WARNING',sc(1-r,gs[k].c,cx,ws[k].z(v)),`${k}: ${v.toFixed(1)} PSI = ${(r*100).toFixed(0)}% of ${n} PSI.`,v,n*0.80));}}return a;};};
+const makeFuel=(fph,ms,cap)=>{let last=null;const w=new W(20),g=new G(5);return s=>{if(last===null){last=s.fuel;return[];}const d=last-s.fuel;last=s.fuel;w.push(d);const exp=(fph/3600)*Math.max(0.3,s.speed/Math.max(ms,1))*(1+s.load/100*0.3)/cap*100,ratio=d/Math.max(exp,1e-6),a=[];if(g.update(ratio>2.5&&d>0.02))a.push(mk('FUEL LEAK','ANOMALY',sc(Math.min(1,ratio/5),g.c,false,w.z(d)),`Consuming ${ratio.toFixed(1)}× faster than model.`,ratio,2.5));if(s.fuel<10)a.push(mk('LOW FUEL','WARNING',45,`Fuel at ${s.fuel.toFixed(1)}%.`,s.fuel,10));return a;};};
+const makeSpd=ms=>{const w=new W(10),g=new G(3),lim=ms*1.15;return s=>{w.push(s.speed);if(g.update(s.speed>lim))return[mk('OVERSPEED','CRITICAL',sc(Math.min(1,(s.speed-lim)/30),g.c,false,w.z(s.speed)),`${s.speed.toFixed(0)} km/h > ${lim.toFixed(0)} km/h limit.`,s.speed,lim)];return[];};};
+const makeDrv=()=>{const hw=new W(30);return s=>{const ev=Number(s.hb)+Number(s.ha)+Number(Math.abs(s.steer)>40);hw.push(ev);const avg=hw.mean();if(avg>0.6)return[mk('DRIVER BEHAVIOR','ANOMALY',sc(avg,Math.floor(avg*20),false,0),`${avg.toFixed(2)} harsh events/frame.`,avg,0.4)];return[];};};
+const makeAir=()=>{const wP=new W(20),wS=new W(20),gP=new G(3),gS=new G(3);return s=>{const a=[];for(const[l,v,w,g] of[['PRIMARY',s.air_p,wP,gP],['SECONDARY',s.air_s,wS,gS]]){w.push(v);if(g.update(v<60||(s.rpm>600&&w.slope()<-0.2&&v<90))){const cx=s.air_p<60&&s.air_s<60;a.push(mk(`AIR BRAKE [${l}]`,v<60?'CRITICAL':'ANOMALY',sc((60-Math.min(v,60))/60,g.c,cx,w.z(v)),`${l} ${v.toFixed(0)} PSI${v<60?' BELOW SAFE':' failing'}.${cx?' DUAL FAILURE!':''}`,v,60));}}return a;};};
+const makeDPF=()=>{const g=new G(2);return s=>{if(g.update(s.dpf>10&&s.exh<300))return[mk('DPF REGEN','ANOMALY',sc((s.dpf/10-1)/2,g.c,!s.scr,0),`DPF ${s.dpf.toFixed(1)} kPa, exh ${s.exh.toFixed(0)}°C.`,s.dpf,10)];return[];};};
+const makeAxle=gvwr=>{const g=new G(3);return s=>{const wt=s.susp*80*2,ov=wt-gvwr;if(g.update(ov>0))return[mk('AXLE OVERLOAD','CRITICAL',sc(Math.min(1,ov/2000),g.c,true,0),`${wt.toFixed(0)} kg > GVWR ${gvwr} kg (+${ov.toFixed(0)} kg).`,wt,gvwr)];return[];};};
+const makeTurbo=()=>{const w=new W(15),g=new G(4);return s=>{w.push(s.turbo);if(g.update(s.speed>30&&s.turbo===0))return[mk('TURBO FAILURE','ANOMALY',sc(1,g.c,s.rpm>3000,w.z(s.turbo)),`Boost=0 at ${s.speed.toFixed(0)} km/h.`,0,1)];return[];};};
+const makeBat=()=>{const h=new W(20),g=new G(3);return s=>{const v=s.bat;h.push(v);if(!s.crank)return[];if(v<=7.5)return[mk('BATTERY','CRITICAL',sc(1,20,s.alt<12,h.z(v)),`Crank ${v.toFixed(2)}V — no-start imminent.`,v,7.5)];const a=[];if(h.len>=5){const sl=h.slope();if(sl<-0.05)a.push(mk('BATTERY','PREDICTIVE',sc(Math.abs(sl)/0.2,h.len,s.alt<13.5,h.z(v)),`Crank V degrading ${Math.abs(sl).toFixed(3)}V/session.`,v,9.0));}return a;};};
+const makeMisfire=()=>{const cw=new W(20),o2w=new W(20),g=new G(1);return s=>{if(s.coolant<79||s.rpm<500)return[];cw.push(s.crank);o2w.push(s.o2);const std=cw.std(),ab=s.o2<0.2||s.o2>0.8;if(g.update(std>1.2))return[mk('MISFIRE',std>2?'CRITICAL':'ANOMALY',sc(std/10,g.c,ab,o2w.z(s.o2)),`Crank std ${std.toFixed(2)}ms. O2=${s.o2.toFixed(2)}V ${ab?'ABNORMAL':'OK'}.`,std,1.2)];return[];};};
+const makeAlign=()=>{const log=new W(50),g=new G(8);let cum=0,ss=null;return s=>{const now=performance.now()/1000;if(Math.abs(s.steer)<3)ss=ss||now;else ss=null;const str=ss?(now-ss):0;if(str>=10&&Math.abs(s.drift)>0.5){cum+=Math.abs(s.drift)*0.5;log.push(cum);if(g.update(true)){if(cum>=6)return[mk('ALIGNMENT','CRITICAL',sc(1,g.c,Math.abs(s.wfl-s.wfr)>2,log.z(cum)),`Drift ${cum.toFixed(1)}° — handling degraded.`,cum,6)];if(cum>=1&&log.len>=5)return[mk('ALIGNMENT','PREDICTIVE',sc(cum/6,g.c,false,log.z(cum)),`Drift ${log.slope().toFixed(3)}°/event → ${cum.toFixed(2)}° offset.`,cum,4)];}}else g.update(false);return[];};};
+const makeTip=()=>{const g=new G(2);let imp=false;return s=>{const l=Math.abs(s.lean),gT=Math.sqrt(s.lat_g**2+s.lon_g**2+s.vert_g**2);if(gT>3)imp=true;if(g.update(l>=70)){return[mk('TIP-OVER',imp?'CRITICAL':'ANOMALY',sc(l/90,g.c,imp,0),`Lean ${l.toFixed(1)}°. Impact: ${imp?'YES — possible crash':'no'}.`,l,70)];}if(l<20)imp=false;return[];};};
+const makeBelt=()=>{const R={1:12,2:7.5,3:5.5,4:4.2,5:3.3},rw=new W(10),ww=new W(10),g=new G(5);return s=>{rw.push(s.rpm);ww.push(s.whr);if(s.whr<5||s.rpm<500)return[];const r=s.rpm/s.whr,best=Object.keys(R).reduce((b,k)=>Math.abs(R[k]-r)<Math.abs(R[b]-r)?k:b,'1'),dev=Math.abs(r-R[best])/R[best],flat=rw.slope()>50&&ww.slope()<1;if(g.update(dev>0.15||flat))return[mk('BELT/CHAIN SLIP','ANOMALY',sc(dev/0.5,g.c,flat,0),`Gear ${best}: ratio ${r.toFixed(1)} vs ${R[best]} (${(dev*100).toFixed(0)}% dev).`,dev,0.15)];return[];};};
+const makeBrakeW=()=>{let log=[],base=null;const g=new G(3);return s=>{if(!s.bon||s.decel<0.1)return[];const eff=s.bdur>0.1?s.decel/s.bdur:null;if(!eff)return[];log.push(eff);if(log.length<5)return[];if(base===null)base=log.slice(0,5).reduce((a,v)=>a+v,0)/5;const drop=(base-eff)/base;if(g.update(drop>=0.25))return[mk('BRAKE WEAR','PREDICTIVE',sc(drop,g.c,false,0),`Efficiency ↓ ${(drop*100).toFixed(0)}% from baseline.`,eff,base*0.75)];return[];};};
 
-// ── Shared: Oil Pressure ──
-function makeOilDet(normalPsi){
-  const w=new Win(20),g=new Gate(3);
-  return function(s){
-    const p=s.oil_psi,ratio=p/normalPsi;w.push(p);
-    const cross=s.coolant_temp>s.ambient+40;
-    if(g.update(ratio<0.50)){return[mk('OIL PRESSURE','CRITICAL',sc(1-ratio,g.c,cross,w.z(p)),`Oil ${p.toFixed(1)} PSI = ${(ratio*100).toFixed(0)}% of normal. Seizure risk!`,p,normalPsi*0.50)];}
-    if(w.len>=5&&ratio<0.70){const slope=w.slope();if(slope<-0.05)return[mk('OIL PRESSURE','PREDICTIVE',sc(Math.abs(slope)/0.5,g.c,cross,w.z(p)),`Oil trending ↓ ${Math.abs(slope).toFixed(3)} PSI/frame.`,p,normalPsi*0.70)];}
-    return[];
-  };
-}
-
-// ── Shared: Vibration ──
-function makeVibDet(){
-  const bw=new Win(50),tw=new Win(20),g=new Gate(3);let spikes=0;
-  return function(s){
-    const r=s.vibration;bw.push(r);tw.push(r);const z=bw.z(r);
-    if(r>=3.0)return[mk('VIBRATION','CRITICAL',sc(1,20,z>3,z),`RMS ${r.toFixed(2)}g — bearing failure imminent!`,r,3.0)];
-    const alerts=[];
-    if(tw.len>=10){const slope=tw.slope();if(g.update(slope>=0.01))alerts.push(mk('VIBRATION','PREDICTIVE',sc(slope/0.05,g.c,z>1.5,z),`Vibration ↑ ${slope.toFixed(4)}g/frame. Early wear.`,r,1.5));else g.update(false);}
-    if(z>2.5){spikes++;if(spikes>=3)alerts.push(mk('VIBRATION','ANOMALY',sc(z/4,spikes,false,z),`${spikes} spikes Z=${z.toFixed(2)}. Axle inspection needed.`,r,bw.mean()+2.5*bw.std()));}else spikes=Math.max(0,spikes-1);
-    return alerts;
-  };
-}
-
-// ── Shared: Tyre Pressure ──
-function makeTyreDet(nomF,nomR){
-  const noms={FL:nomF,FR:nomF,RL:nomR,RR:nomR};
-  const wins={FL:new Win(20),FR:new Win(20),RL:new Win(20),RR:new Win(20)};
-  const gates={FL:new Gate(2),FR:new Gate(2),RL:new Gate(2),RR:new Gate(2)};
-  return function(s){
-    const tyres={FL:s.tyre_fl,FR:s.tyre_fr,RL:s.tyre_rl,RR:s.tyre_rr};
-    const alerts=[];
-    for(const[pos,psi] of Object.entries(tyres)){
-      const n=noms[pos];wins[pos].push(psi);const ratio=psi/n;
-      if(gates[pos].update(ratio<0.80)){
-        const cross=Object.entries(tyres).some(([p2,v2])=>p2!==pos&&v2/noms[p2]<0.85);
-        alerts.push(mk(`TYRE [${pos}]`,ratio<0.60?'CRITICAL':'WARNING',sc(1-ratio,gates[pos].c,cross,wins[pos].z(psi)),`Tyre ${pos}: ${psi.toFixed(1)} PSI = ${(ratio*100).toFixed(0)}% of nominal (${n} PSI).`,psi,n*0.80));
-      }
-    }
-    return alerts;
-  };
-}
-
-// ── Shared: Fuel ──
-function makeFuelDet(fph,maxSpeed,cap){
-  let last=null;const w=new Win(20),g=new Gate(5);
-  return function(s){
-    if(last===null){last=s.fuel;return[];}
-    const drain=last-s.fuel;last=s.fuel;w.push(drain);
-    const sr=Math.max(0.3,s.speed/Math.max(maxSpeed,1)),lf=1+s.load/100*0.3;
-    const exp=(fph/3600)*sr*lf/cap*100;
-    const ratio=drain/Math.max(exp,1e-6);
-    const alerts=[];
-    if(g.update(ratio>2.5&&drain>0.02))alerts.push(mk('FUEL DRAIN','ANOMALY',sc(Math.min(1,ratio/5),g.c,false,w.z(drain)),`Fuel draining ${ratio.toFixed(1)}× faster than model. Possible leak.`,ratio,2.5));
-    if(s.fuel<10)alerts.push(mk('FUEL CRITICAL','WARNING',45,`Fuel ${s.fuel.toFixed(1)}% — critically low.`,s.fuel,10));
-    return alerts;
-  };
-}
-
-// ── Shared: Overspeed ──
-function makeSpeedDet(maxSpeed){
-  const w=new Win(10),g=new Gate(3);const lim=maxSpeed*1.15;
-  return function(s){
-    w.push(s.speed);
-    if(g.update(s.speed>lim))return[mk('OVERSPEED','CRITICAL',sc(Math.min(1,(s.speed-lim)/30),g.c,false,w.z(s.speed)),`Speed ${s.speed.toFixed(0)} km/h exceeds limit ${lim.toFixed(0)} km/h.`,s.speed,lim)];
-    return[];
-  };
-}
-
-// ── HEAVY: Air Brake ──
-function makeAirBrakeDet(){
-  const wP=new Win(20),wS=new Win(20),gP=new Gate(3),gS=new Gate(3);
-  return function(s){
-    const alerts=[];
-    for(const[lbl,val,w,gate] of [['PRIMARY',s.air_brake_p,wP,gP],['SECONDARY',s.air_brake_s,wS,gS]]){
-      w.push(val);const slope=w.slope();const fail=s.rpm>600&&slope<-0.2&&val<90;
-      if(gate.update(val<60||fail)){
-        const cross=s.air_brake_p<60&&s.air_brake_s<60;
-        alerts.push(mk(`AIR BRAKE [${lbl}]`,val<60?'CRITICAL':'ANOMALY',sc((60-Math.min(val,60))/60,gate.c,cross,w.z(val)),`Brake air ${val.toFixed(0)} PSI ${val<60?'— BELOW SAFE LIMIT':'failing to build'}. ${cross?'DUAL-CIRCUIT FAILURE':''}`,val,60));
-      }
-    }
-    return alerts;
-  };
-}
-
-// ── HEAVY: DPF Regen ──
-function makeDPFDet(){
-  const g=new Gate(2);
-  return function(s){
-    if(g.update(s.dpf_bp>10&&s.exhaust_temp<300)){const score=sc((s.dpf_bp/10-1)/2,g.c,!s.scr_ok,0);return[mk('DPF REGEN','ANOMALY',score,`DPF backpressure ${s.dpf_bp.toFixed(1)} kPa. Exhaust ${s.exhaust_temp.toFixed(0)}°C. Filter clogging — forced regen required.`,s.dpf_bp,10)];}
-    return[];
-  };
-}
-
-// ── HEAVY: Axle Overload ──
-function makeAxleDet(gvwr){
-  const g=new Gate(3);
-  return function(s){
-    const weight=s.susp_psi*80*2,over=weight-gvwr;
-    if(g.update(over>0)){const score=sc(Math.min(1,over/2000),g.c,true,0);return[mk('AXLE OVERLOAD','CRITICAL',score,`Est. load ${weight.toFixed(0)} kg exceeds GVWR ${gvwr} kg (+${over.toFixed(0)} kg).`,weight,gvwr)];}
-    return[];
-  };
-}
-
-// ── HEAVY: Turbo ──
-function makeTurboDet(){
-  const w=new Win(15),g=new Gate(4);
-  return function(s){
-    w.push(s.turbo_boost);const z=w.z(s.turbo_boost);
-    if(g.update(s.speed>30&&s.turbo_boost===0)){const score=sc(1.0,g.c,s.rpm>3000,Math.abs(z));return[mk('TURBO','ANOMALY',score,`Turbo boost = 0 at ${s.speed.toFixed(0)} km/h. Turbo failure likely.`,s.turbo_boost,1.0)];}
-    return[];
-  };
-}
-
-// ── CAR: Battery ──
-function makeBatDet(){
-  const h=new Win(20),g=new Gate(3);
-  return function(s){
-    const v=s.battery_v;h.push(v);
-    if(!s.is_cranking)return[];
-    if(v<=7.5)return[mk('BATTERY','CRITICAL',sc(1,20,s.alt_v<12,h.z(v)),`Crank voltage ${v.toFixed(2)}V — no-start imminent!`,v,7.5)];
-    const alerts=[];
-    if(h.len>=5){const slope=h.slope();if(slope<-0.05){const cross=s.alt_v<13.5;alerts.push(mk('BATTERY','PREDICTIVE',sc(Math.abs(slope)/0.2,h.len,cross,h.z(v)),`Crank V degrading ${Math.abs(slope).toFixed(3)}V/session. Alt: ${s.alt_v.toFixed(1)}V.`,v,9.0));}}
-    const z=h.z(v);if(v<9.6&&z<-1.8)alerts.push(mk('BATTERY','ANOMALY',sc((9.6-v)/2,g.c,false,z),`Abnormal crank sag Z=${z.toFixed(2)}, ${v.toFixed(2)}V.`,v,9.6));
-    return alerts;
-  };
-}
-
-// ── CAR: Misfire ──
-function makeMisfireDet(){
-  const cw=new Win(20),o2w=new Win(20),g=new Gate(1);
-  return function(s){
-    if(s.coolant_temp<79||s.rpm<500)return[];
-    cw.push(s.crank_ms);o2w.push(s.o2_v);
-    const std=cw.std(),o2Abn=s.o2_v<0.2||s.o2_v>0.8;
-    if(g.update(std>1.2)){const score=sc(std/10,g.c,o2Abn,o2w.z(s.o2_v));return[mk('MISFIRE',score>=71?'CRITICAL':'ANOMALY',score,`Crank interval std ${std.toFixed(2)}ms. O2=${s.o2_v.toFixed(2)}V ${o2Abn?'(ABNORMAL ✗)':'(OK)'}.`,std,1.2)];}
-    return[];
-  };
-}
-
-// ── CAR: Alignment ──
-function makeAlignDet(){
-  const log=new Win(50),g=new Gate(8);let cum=0,ss=null;
-  return function(s){
-    const now=performance.now()/1000;
-    if(Math.abs(s.steering)<3)ss=ss||now;else ss=null;
-    const straight=ss?(now-ss):0;
-    if(straight>=10&&Math.abs(s.lat_drift)>0.5){
-      cum+=Math.abs(s.lat_drift)*0.5;log.push(cum);
-      const wdiff=Math.abs(s.wfl-s.wfr),cross=wdiff>2.0,alerts=[];
-      if(g.update(true)){
-        if(cum>=6.0){const score=sc(1,g.c,cross,log.z(cum));alerts.push(mk('ALIGNMENT','CRITICAL',score,`Offset ${cum.toFixed(1)}° — handling degraded. Immediate service.`,cum,6.0));}
-        else if(cum>=1.0&&log.len>=5){const slope=log.slope();const score=sc(cum/6,g.c,cross,log.z(cum));alerts.push(mk('ALIGNMENT','PREDICTIVE',score,`Drift ${slope.toFixed(3)}°/event. Current ${cum.toFixed(2)}°.`,cum,4.0));}
-      }
-      return alerts;
-    }else g.update(false);
-    return[];
-  };
-}
-
-// ── TWO: Tip-Over ──
-function makeTipOverDet(){
-  const g=new Gate(2);let impact=false;
-  return function(s){
-    const lean=Math.abs(s.lean_deg);const g_total=Math.sqrt(s.lat_g**2+s.lon_g**2+s.vert_g**2);
-    if(g_total>3.0)impact=true;
-    if(g.update(lean>=70)){const score=sc(lean/90,g.c,impact,0);const layer=impact?'CRITICAL':'ANOMALY';return[mk('TIP-OVER',layer,score,`Lean angle ${lean.toFixed(1)}° sustained. Impact detected: ${impact?'YES — POSSIBLE CRASH!':'no'}.`,lean,70)];}
-    if(lean<20)impact=false;
-    return[];
-  };
-}
-
-// ── TWO: Belt/Chain Slip ──
-function makeBeltDet(){
-  const RATIOS={1:12.0,2:7.5,3:5.5,4:4.2,5:3.3};
-  const rw=new Win(10),ww=new Win(10),g=new Gate(5);
-  return function(s){
-    rw.push(s.rpm);ww.push(s.wheel_rear);
-    if(s.wheel_rear<5||s.rpm<500)return[];
-    const ratio=s.rpm/s.wheel_rear,gear=Object.keys(RATIOS).reduce((best,k)=>Math.abs(RATIOS[k]-ratio)<Math.abs(RATIOS[best]-ratio)?k:best,'1');
-    const exp=RATIOS[gear],dev=Math.abs(ratio-exp)/exp;
-    const rSlope=rw.slope(),wSlope=ww.slope(),rpmuWflat=rSlope>50&&wSlope<1.0;
-    if(g.update(dev>0.15||rpmuWflat)){const score=sc(dev/0.5,g.c,rpmuWflat,0);return[mk('BELT/CHAIN SLIP','ANOMALY',score,`Gear ${gear}: expected ratio ${exp.toFixed(1)}, actual ${ratio.toFixed(1)} (${(dev*100).toFixed(0)}% dev). RPM up + wheel flat: ${rpmuWflat?'YES':'no'}.`,dev,0.15)];}
-    return[];
-  };
-}
-
-// ── TWO: Brake Wear ──
-function makeBrakeWearDet(){
-  let log=[],baseline=null;const g=new Gate(3);
-  return function(s){
-    if(!s.brake_pressed||s.decel_ms2<0.1)return[];
-    const eff=s.brake_dur>0.1?s.decel_ms2/s.brake_dur:null;
-    if(!eff)return[];
-    log.push(eff);
-    if(log.length<5)return[];
-    if(baseline===null)baseline=log.slice(0,5).reduce((a,v)=>a+v,0)/5;
-    const drop=(baseline-eff)/baseline;
-    if(g.update(drop>=0.25)){const score=sc(drop,g.c,false,0);return[mk('BRAKE WEAR','PREDICTIVE',score,`Braking efficiency ↓ ${(drop*100).toFixed(0)}% from baseline (${baseline.toFixed(2)}→${eff.toFixed(2)} m/s²/s).`,eff,baseline*0.75)];}
-    return[];
-  };
-}
-
-// ── Driver Behavior (all) ──
-function makeDrvDet(){
-  const hw=new Win(30),sw=new Win(20);
-  return function(s){
-    const ev=Number(s.harsh_braking)+Number(s.harsh_accel)+Number(Math.abs(s.steering)>40);
-    hw.push(ev);sw.push(Math.abs(s.steering));
-    const avg=hw.mean(),z=sw.z(Math.abs(s.steering));
-    if(avg>0.6)return[mk('DRIVER BEHAVIOR','ANOMALY',sc(avg,Math.floor(avg*20),false,0),`Persistent harsh driving: ${avg.toFixed(2)} events/frame. Coaching required.`,avg,0.4)];
-    if(Math.abs(s.steering)>40&&z>2.0)return[mk('DRIVER BEHAVIOR','ANOMALY',sc(Math.abs(s.steering)/60,1,false,z),`Extreme steering ${s.steering.toFixed(0)}°. Z=${z.toFixed(2)}.`,Math.abs(s.steering),40)];
-    return[];
-  };
-}
-
-// ════════════════════════════════════════════════════════════
-//  VEHICLE PROFILES
-// ════════════════════════════════════════════════════════════
-const PROFILES={
-  SCOOTY:{cls:'TWO', normalOil:35,tyreF:30,tyreR:28,maxSpeed:60, fph:10, cap:5,   gvwr:0,    hasTurbo:false},
-  BIKE:  {cls:'TWO', normalOil:40,tyreF:32,tyreR:30,maxSpeed:120,fph:18, cap:15,  gvwr:0,    hasTurbo:false},
-  CAR:   {cls:'CAR', normalOil:55,tyreF:32,tyreR:32,maxSpeed:140,fph:60, cap:50,  gvwr:0,    hasTurbo:false},
-  PICKUP:{cls:'CAR', normalOil:60,tyreF:35,tyreR:38,maxSpeed:130,fph:80, cap:80,  gvwr:0,    hasTurbo:true},
-  VAN:   {cls:'HEAVY',normalOil:60,tyreF:38,tyreR:42,maxSpeed:120,fph:90, cap:80, gvwr:5000, hasTurbo:true},
-  TRUCK: {cls:'HEAVY',normalOil:65,tyreF:100,tyreR:110,maxSpeed:100,fph:120,cap:300,gvwr:18000,hasTurbo:true},
-  BUS:   {cls:'HEAVY',normalOil:68,tyreF:100,tyreR:110,maxSpeed:90,fph:150,cap:250, gvwr:16000,hasTurbo:true},
+// ═══ PROFILES ═══
+const P={
+  SCOOTY:{cls:'TWO',oil:35,tf:30,tr:28,ms:60, fph:10, cap:5,   gvwr:0,    turbo:false},
+  BIKE:  {cls:'TWO',oil:40,tf:32,tr:30,ms:120,fph:18, cap:15,  gvwr:0,    turbo:false},
+  CAR:   {cls:'CAR',oil:55,tf:32,tr:32,ms:140,fph:60, cap:50,  gvwr:0,    turbo:false},
+  PICKUP:{cls:'CAR',oil:60,tf:35,tr:38,ms:130,fph:80, cap:80,  gvwr:0,    turbo:true},
+  VAN:   {cls:'HEAVY',oil:60,tf:38,tr:42,ms:120,fph:90,cap:80, gvwr:5000, turbo:true},
+  TRUCK: {cls:'HEAVY',oil:65,tf:100,tr:110,ms:100,fph:120,cap:300,gvwr:18000,turbo:true},
+  BUS:   {cls:'HEAVY',oil:68,tf:100,tr:110,ms:90,fph:150,cap:250,gvwr:16000,turbo:true},
 };
-
-const CLS_COLOR={HEAVY:'var(--heavy-c)',CAR:'var(--car-c)',TWO:'var(--two-c)'};
-
-// ════════════════════════════════════════════════════════════
-//  BUILD FLEET: 100 VEHICLES
-// ════════════════════════════════════════════════════════════
 const COUNTS={SCOOTY:10,BIKE:10,CAR:20,PICKUP:10,VAN:15,TRUCK:20,BUS:15};
-const rand=(a,b)=>a+Math.random()*(b-a);
-function gauss(){let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);}
+const rv=(a,b)=>a+Math.random()*(b-a);
+const gn=()=>{let u=0,v=0;while(!u)u=Math.random();while(!v)v=Math.random();return Math.sqrt(-2*Math.log(u))*Math.cos(2*Math.PI*v);};
+const CC={HEAVY:'var(--amber)',CAR:'var(--blue)',TWO:'var(--accent)'};
 
-const vehicles=[];
+const fleet=[];
 for(const[type,count] of Object.entries(COUNTS)){
-  const prof=PROFILES[type];
+  const p=P[type];
   for(let i=1;i<=count;i++){
     const id=`${type}-${String(i).padStart(3,'0')}`;
     const fc=Math.random();
     const v={
-      id,type,cls:prof.cls,prof,
-      // physics state
-      speed:rand(10,prof.maxSpeed*0.65),rpm:rand(800,3000),
-      engine_temp:rand(70,90),coolant_temp:rand(78,94),oil_temp:rand(76,90),ambient:32,
-      oil_psi:prof.normalOil*(fc<0.12?rand(0.3,0.55):rand(0.82,1.08)),
-      tyre_fl:prof.tyreF*rand(0.87,1.02),tyre_fr:prof.tyreF*rand(0.87,1.02),
-      tyre_rl:prof.tyreR*rand(0.87,1.02),tyre_rr:prof.tyreR*rand(0.87,1.02),
-      fuel:rand(30,92),load:rand(20,80),
-      battery_v:fc<0.14?rand(8.2,9.9):rand(12.0,13.8),alt_v:rand(13.4,14.6),
-      vibration:rand(0.05,0.45),
-      crank_ms:fc<0.1?rand(48,52)+gauss()*2.5:50+gauss()*0.3,
-      o2_v:fc<0.1?rand(0.12,0.88):rand(0.38,0.52),
-      air_brake_p:(prof.cls==='HEAVY')?(fc<0.14?rand(20,58):rand(106,128)):120,
-      air_brake_s:(prof.cls==='HEAVY')?(fc<0.10?rand(25,65):rand(106,128)):120,
-      dpf_bp:fc<0.17?rand(10,19):rand(3,7),exhaust_temp:fc<0.17?rand(180,290):rand(380,450),scr_ok:fc>=0.17,
-      susp_psi:fc<0.10?rand(110,145):rand(60,105),
-      turbo_boost:prof.hasTurbo?(fc<0.08?0:rand(7,17)):0,
-      lean_deg:0,lat_g:0,lon_g:0,vert_g:1.0,wheel_rear:rand(10,90),
-      lat_drift:rand(0,1.5),wfl:60,wfr:60,steering:rand(-20,20),
-      brake_pressed:false,decel_ms2:0,brake_dur:0,
-      harsh_braking:false,harsh_accel:false,is_cranking:false,
-      health_score:fc<0.2?rand(30,65):rand(68,95),
-      driver_score:rand(70,95),
-      mode:['CITY','HIGHWAY'][Math.floor(Math.random()*2)],
-      mode_timer:rand(30,90),target_speed:0,
-      status:'ok',alertCount:0,
-      detectors:[],
+      id,type,cls:p.cls,p,
+      speed:rv(10,p.ms*0.65),rpm:rv(800,3000),
+      coolant:rv(78,94),oil_t:rv(76,90),
+      oil_psi:p.oil*(fc<0.12?rv(0.3,0.55):rv(0.82,1.08)),
+      tfl:p.tf*rv(0.87,1.02),tfr:p.tf*rv(0.87,1.02),
+      trl:p.tr*rv(0.87,1.02),trr:p.tr*rv(0.87,1.02),
+      fuel:rv(30,92),load:rv(20,80),
+      bat:fc<0.14?rv(8.2,9.9):rv(12,13.8),alt:rv(13.4,14.6),
+      vib:rv(0.05,0.45),
+      crank:fc<0.1?50+gn()*2.5:50+gn()*0.3,
+      o2:fc<0.1?rv(0.12,0.88):rv(0.38,0.52),
+      air_p:p.cls==='HEAVY'?(fc<0.14?rv(20,58):rv(106,128)):120,
+      air_s:p.cls==='HEAVY'?(fc<0.10?rv(25,65):rv(106,128)):120,
+      dpf:fc<0.17?rv(10,19):rv(3,7),exh:fc<0.17?rv(180,290):rv(380,450),scr:fc>=0.17,
+      susp:fc<0.10?rv(110,145):rv(60,105),
+      turbo:p.turbo?(fc<0.08?0:rv(7,17)):0,
+      lean:0,lat_g:0,lon_g:0,vert_g:1,whr:rv(10,90),
+      drift:rv(0,1.5),wfl:60,wfr:60,steer:rv(-20,20),
+      hb:false,ha:false,crank_ev:false,
+      bon:false,decel:0,bdur:0,
+      health:fc<0.2?rv(30,65):rv(68,95),
+      driver:rv(70,95),
+      mode:'CITY',mt:rv(30,90),tgt:0,status:'ok',dets:[],
     };
-    v.target_speed=v.mode==='HIGHWAY'?prof.maxSpeed*0.8:prof.maxSpeed*0.3;
-    // Build detector set by class
-    const dets=[makeEngDet(),makeOilDet(prof.normalOil),makeVibDet(),makeTyreDet(prof.tyreF,prof.tyreR),makeFuelDet(prof.fph,prof.maxSpeed,prof.cap),makeSpeedDet(prof.maxSpeed),makeDrvDet()];
-    if(prof.cls==='HEAVY'){dets.push(makeAirBrakeDet(),makeDPFDet());if(prof.gvwr>0)dets.push(makeAxleDet(prof.gvwr));if(prof.hasTurbo)dets.push(makeTurboDet());}
-    if(prof.cls==='CAR'){dets.push(makeBatDet(),makeMisfireDet(),makeAlignDet());}
-    if(prof.cls==='TWO'){dets.push(makeTipOverDet(),makeBeltDet(),makeBrakeWearDet());}
-    v.detectors=dets;
-    vehicles.push(v);
+    v.tgt=v.mode==='HIGHWAY'?p.ms*0.8:p.ms*0.3;
+    const dets=[makeEng(),makeOil(p.oil),makeVib(),makeTyre(p.tf,p.tr),makeFuel(p.fph,p.ms,p.cap),makeSpd(p.ms),makeDrv()];
+    if(p.cls==='HEAVY'){dets.push(makeAir(),makeDPF());if(p.gvwr)dets.push(makeAxle(p.gvwr));if(p.turbo)dets.push(makeTurbo());}
+    if(p.cls==='CAR')dets.push(makeBat(),makeMisfire(),makeAlign());
+    if(p.cls==='TWO')dets.push(makeTip(),makeBelt(),makeBrakeW());
+    v.dets=dets;fleet.push(v);
   }
 }
 
-// ════════════════════════════════════════════════════════════
-//  SIMULATION STEP
-// ════════════════════════════════════════════════════════════
-function simStep(v){
-  const prof=v.prof;
-  v.mode_timer--;
-  if(v.mode_timer<=0){
-    v.mode=['CITY','HIGHWAY','IDLE','BRAKING'][Math.floor(Math.random()*4)];
-    v.mode_timer=rand(30,90);
-    v.target_speed={CITY:prof.maxSpeed*0.3,HIGHWAY:prof.maxSpeed*0.8,IDLE:0,BRAKING:0}[v.mode];
-  }
-  // Speed
-  const diff=v.target_speed-v.speed;
-  v.speed=Math.max(0,v.speed+Math.sign(diff)*Math.min(Math.abs(diff),v.mode==='BRAKING'?5:2)+gauss()*0.5);
-  v.rpm=Math.max(700,800+(v.speed/prof.maxSpeed)*2800+gauss()*100);
-  // Engine thermal model
-  const loadHeat=v.load*0.18,speedHeat=v.speed*0.25;
-  const tgt=35+loadHeat+speedHeat+(v.load/100)*8;
-  v.engine_temp+=(tgt-v.engine_temp)*0.03+gauss()*0.15;
-  v.coolant_temp=v.engine_temp*0.97+gauss()*0.25;
-  v.oil_temp=v.engine_temp*0.95+gauss()*0.2;
-  // Oil pressure wear
-  v.oil_psi=Math.max(0,v.oil_psi+(gauss()*0.25)-0.007);
-  // Tyre slow leak
-  ['tyre_fl','tyre_fr','tyre_rl','tyre_rr'].forEach(k=>v[k]=Math.max(0,v[k]-0.001-Math.random()*0.002+gauss()*0.008));
-  // Fuel consumption
-  const sr=Math.max(0.3,v.speed/Math.max(prof.maxSpeed,1)),lf=1+v.load/100*0.3;
-  v.fuel=Math.max(0,v.fuel-(prof.fph/3600)*sr*lf/prof.cap*100);
-  // Vibration drift
-  v.vibration=Math.max(0,Math.min(8,v.vibration+(gauss()*0.025)));
-  // Battery
-  v.is_cranking=v.speed===0&&Math.random()<0.06;
-  if(v.battery_v<10.5)v.battery_v=Math.max(6,v.battery_v+(gauss()*0.08)-0.015);
-  else v.battery_v=Math.min(14.8,v.battery_v+gauss()*0.04);
-  // Crank interval
-  v.crank_ms=50+gauss()*(v.crank_ms>51?1.2:0.25);
-  v.o2_v=Math.max(0.05,Math.min(0.95,v.o2_v+gauss()*0.015));
-  // Heavy systems
-  if(prof.cls==='HEAVY'){
-    v.air_brake_p=v.air_brake_p<60?Math.max(5,v.air_brake_p+(gauss()*0.4)-0.05):Math.min(130,v.air_brake_p+gauss()*0.25);
-    v.air_brake_s=v.air_brake_s<60?Math.max(5,v.air_brake_s+(gauss()*0.4)-0.05):Math.min(130,v.air_brake_s+gauss()*0.25);
-    v.dpf_bp=v.dpf_bp>10?Math.min(22,v.dpf_bp+gauss()*0.08):Math.max(2,v.dpf_bp+gauss()*0.04);
-    v.turbo_boost=prof.hasTurbo?(v.turbo_boost===0&&v.speed>30?0:Math.max(0,v.turbo_boost+gauss()*0.3)):0;
-  }
-  // Two-wheeler lean
-  if(prof.cls==='TWO'){
-    const steerRad=Math.abs(v.steering)*Math.PI/180;
-    const spd_ms=v.speed/3.6;
-    v.lean_deg=Math.min(85,v.mode==='BRAKING'?rand(5,20):Math.degrees?0:Math.atan2(spd_ms**2*steerRad,9.81*50)*180/Math.PI);
-    v.lean_deg=Math.max(0,v.lean_deg+(gauss()*2));
-    v.lat_g=v.mode==='BRAKING'?rand(0.1,0.6):rand(0,0.2);
-    v.vert_g=v.mode==='BRAKING'?rand(0.5,0.9):1.0;
-    v.wheel_rear=v.speed;
-  }
-  // Driver
-  v.harsh_braking=v.mode==='BRAKING'&&Math.random()<0.28;
-  v.harsh_accel=v.mode==='HIGHWAY'&&Math.random()<0.08;
-  v.steering=Math.max(-70,Math.min(70,v.steering+(gauss()*4)));
-  v.lat_drift=Math.max(0,v.lat_drift+gauss()*0.04);
-  v.wfl=v.speed+gauss()*0.4;v.wfr=v.speed+gauss()*0.5;
-  // Brake wear fields
-  v.brake_pressed=v.mode==='BRAKING';v.decel_ms2=v.brake_pressed?rand(2,8):0;v.brake_dur=v.brake_pressed?1.0+rand(0,2):0;
-  // Health score
-  v.health_score=Math.max(10,Math.min(100,v.health_score+(gauss()*0.4)-0.015));
-  v.driver_score=Math.max(10,Math.min(100,v.driver_score+(gauss()*0.3)-0.01));
+function snap(v){return{coolant:v.coolant,oil_t:v.oil_t,oil_psi:v.oil_psi,vib:v.vib,tfl:v.tfl,tfr:v.tfr,trl:v.trl,trr:v.trr,fuel:v.fuel,speed:v.speed,rpm:v.rpm,load:v.load,bat:v.bat,alt:v.alt,crank:v.crank_ev,crank_ms:v.crank,o2:v.o2,air_p:v.air_p,air_s:v.air_s,dpf:v.dpf,exh:v.exh,scr:v.scr,susp:v.susp,turbo:v.turbo,lean:v.lean,lat_g:v.lat_g,lon_g:0,vert_g:v.vert_g,whr:v.whr,drift:v.drift,wfl:v.wfl,wfr:v.wfr,steer:v.steer,hb:v.hb,ha:v.ha,bon:v.bon,decel:v.decel,bdur:v.bdur};}
+
+function step(v){
+  const p=v.p;v.mt--;
+  if(v.mt<=0){v.mode=['CITY','HIGHWAY','IDLE','BRAKING'][Math.floor(Math.random()*4)];v.mt=rv(30,90);v.tgt={CITY:p.ms*0.3,HIGHWAY:p.ms*0.8,IDLE:0,BRAKING:0}[v.mode];}
+  const d=v.tgt-v.speed;v.speed=Math.max(0,v.speed+Math.sign(d)*Math.min(Math.abs(d),v.mode==='BRAKING'?5:2)+gn()*0.5);
+  v.rpm=Math.max(700,800+(v.speed/p.ms)*2800+gn()*100);
+  const tgt=35+v.load*0.18+v.speed*0.25+(v.load/100)*8;
+  v.coolant+=(tgt-v.coolant)*0.03+gn()*0.15;v.oil_t=v.coolant*0.95+gn()*0.2;
+  v.oil_psi=Math.max(0,v.oil_psi+(gn()*0.25)-0.007);
+  ['tfl','tfr','trl','trr'].forEach(k=>v[k]=Math.max(0,v[k]-0.001-Math.random()*0.002));
+  v.fuel=Math.max(0,v.fuel-(p.fph/3600)*Math.max(0.3,v.speed/Math.max(p.ms,1))*(1+v.load/100*0.3)/p.cap*100);
+  v.vib=Math.max(0,Math.min(8,v.vib+gn()*0.025));
+  v.crank_ev=v.speed===0&&Math.random()<0.06;
+  v.bat=v.bat<10.5?Math.max(6,v.bat+(gn()*0.08)-0.015):Math.min(14.8,v.bat+gn()*0.04);
+  v.crank=50+gn()*(v.crank>51?1.2:0.25);v.o2=Math.max(0.05,Math.min(0.95,v.o2+gn()*0.015));
+  if(p.cls==='HEAVY'){v.air_p=v.air_p<60?Math.max(5,v.air_p+gn()*0.4-0.05):Math.min(130,v.air_p+gn()*0.25);v.air_s=v.air_s<60?Math.max(5,v.air_s+gn()*0.4-0.05):Math.min(130,v.air_s+gn()*0.25);v.dpf=v.dpf>10?Math.min(22,v.dpf+gn()*0.08):Math.max(2,v.dpf+gn()*0.04);v.turbo=p.turbo?(v.turbo===0&&v.speed>30?0:Math.max(0,v.turbo+gn()*0.3)):0;}
+  if(p.cls==='TWO'){v.lean=Math.max(0,v.lean+gn()*2);v.lat_g=v.mode==='BRAKING'?rv(0.1,0.6):rv(0,0.2);v.vert_g=v.mode==='BRAKING'?rv(0.5,0.9):1.0;v.whr=v.speed;}
+  v.hb=v.mode==='BRAKING'&&Math.random()<0.28;v.ha=v.mode==='HIGHWAY'&&Math.random()<0.08;
+  v.steer=Math.max(-70,Math.min(70,v.steer+gn()*4));v.drift=Math.max(0,v.drift+gn()*0.04);v.wfl=v.speed+gn()*0.4;v.wfr=v.speed+gn()*0.5;
+  v.bon=v.mode==='BRAKING';v.decel=v.bon?rv(2,8):0;v.bdur=v.bon?1+rv(0,2):0;
+  v.health=Math.max(10,Math.min(100,v.health+gn()*0.4-0.015));v.driver=Math.max(10,Math.min(100,v.driver+gn()*0.3-0.01));
 }
 
-function buildSnap(v){
-  return{
-    coolant_temp:v.coolant_temp,oil_temp:v.oil_temp,engine_temp:v.engine_temp,
-    oil_psi:v.oil_psi,vibration:v.vibration,
-    tyre_fl:v.tyre_fl,tyre_fr:v.tyre_fr,tyre_rl:v.tyre_rl,tyre_rr:v.tyre_rr,
-    fuel:v.fuel,speed:v.speed,rpm:v.rpm,load:v.load,ambient:v.ambient,
-    battery_v:v.battery_v,alt_v:v.alt_v,is_cranking:v.is_cranking,
-    crank_ms:v.crank_ms,o2_v:v.o2_v,
-    air_brake_p:v.air_brake_p,air_brake_s:v.air_brake_s,
-    dpf_bp:v.dpf_bp,exhaust_temp:v.exhaust_temp,scr_ok:v.scr_ok,
-    susp_psi:v.susp_psi,turbo_boost:v.turbo_boost,
-    lean_deg:v.lean_deg,lat_g:v.lat_g,lon_g:0,vert_g:v.vert_g,wheel_rear:v.wheel_rear,
-    lat_drift:v.lat_drift,wfl:v.wfl,wfr:v.wfr,steering:v.steering,
-    harsh_braking:v.harsh_braking,harsh_accel:v.harsh_accel,
-    brake_pressed:v.brake_pressed,decel_ms2:v.decel_ms2,brake_dur:v.brake_dur,
-  };
-}
+// ═══ STATE ═══
+let alerts=[];
+const spData=new Array(30).fill(0);
+let curCls='ALL',curSev=null,curMod=null;
 
-// ════════════════════════════════════════════════════════════
-//  ALERT STATE
-// ════════════════════════════════════════════════════════════
-let allAlerts=[];
-
-function runDetection(){
-  const sample=[...vehicles].sort(()=>Math.random()-0.5).slice(0,10);
+function detect(){
+  const sample=[...fleet].sort(()=>Math.random()-0.5).slice(0,10);
+  let nc=0;
   for(const v of sample){
-    simStep(v);
-    const snap=buildSnap(v);
-    const fresh=v.detectors.flatMap(d=>d(snap)).slice(0,2).map(a=>({...a,vehicleId:v.id,vehicleType:v.type,vehicleCls:v.cls}));
-    for(const a of fresh)allAlerts.unshift(a);
-    updateVStatus(v);
+    step(v);
+    const s=snap(v);
+    const na=v.dets.flatMap(d=>d(s)).slice(0,2).map(a=>({...a,vid:v.id,vtype:v.type,vcls:v.cls}));
+    for(const a of na){alerts.unshift(a);nc++;}
+    const ac=alerts.filter(a=>a.vid===v.id&&!a.resolved);
+    v.status=ac.some(a=>a.severity==='CRITICAL')?'crit':ac.some(a=>a.severity==='WARNING')?'warn':'ok';
   }
-  if(allAlerts.length>300)allAlerts=allAlerts.slice(0,300);
+  if(alerts.length>350)alerts=alerts.slice(0,350);
+  spData.shift();spData.push(nc);
   renderAll();
 }
 
-function updateVStatus(v){
-  const active=allAlerts.filter(a=>a.vehicleId===v.id&&!a.resolved);
-  v.status=active.some(a=>a.severity==='CRITICAL')?'crit':active.some(a=>a.severity==='WARNING')?'warn':'ok';
-}
-
-// ════════════════════════════════════════════════════════════
-//  RENDER STATE
-// ════════════════════════════════════════════════════════════
-let curClass='ALL',curSev='ALL',curCat=null;
-
-function setClassFilter(cls,topEl,sideEl){
-  curClass=cls;
-  // update topbar active
-  ['ALL','HEAVY','CAR','TWO'].forEach(c=>{const el=document.getElementById(`ts-${c.toLowerCase()}`);if(el)el.classList.toggle('active',c===cls);});
-  // update sidebar tabs
-  document.querySelectorAll('.ctab').forEach(t=>t.className=t.className.replace(/active-\w+/g,'').trim());
-  const sideTarget=sideEl||document.getElementById(`ct-${cls}`);
-  if(sideTarget)sideTarget.classList.add(`active-${cls.toLowerCase()}`);
+function setCls(c){
+  curCls=c;
+  document.querySelectorAll('.cp').forEach(e=>e.classList.remove('on'));
+  const el=document.getElementById(`cp-${c}`);if(el)el.classList.add('on');
   renderAll();
 }
-
-function setSevFilter(sev,btn){
-  curSev=sev;
-  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('act'));
-  btn.classList.add('act');
+function setSev(s,btn){
+  curSev=s;
+  document.querySelectorAll('.fb').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  renderFeed();
+}
+function setMod(m,row){
+  curMod=curMod===m?null:m;
+  document.querySelectorAll('.mr').forEach(r=>r.classList.remove('on'));
+  if(curMod)row.classList.add('on');
   renderFeed();
 }
 
-function setCat(cat,row){
-  curCat=curCat===cat?null:cat;
-  document.querySelectorAll('.catr').forEach(r=>r.classList.remove('sel'));
-  if(curCat)row.classList.add('sel');
-  renderFeed();
-}
+function vis(){return fleet.filter(v=>curCls==='ALL'||v.cls===curCls);}
+function visIds(){return new Set(vis().map(v=>v.id));}
 
-function visibleVehicles(){
-  return vehicles.filter(v=>curClass==='ALL'||v.cls===curClass);
-}
-
-function getFiltered(){
-  const q=(document.getElementById('srch')?.value||'').toLowerCase().trim();
-  const vis=visibleVehicles();
-  const visIds=new Set(vis.map(v=>v.id));
-  return allAlerts.filter(a=>{
-    if(!visIds.has(a.vehicleId))return false;
-    if(curSev!=='ALL'){if(curSev==='RESOLVED'){if(!a.resolved)return false;}else{if(a.severity!==curSev||a.resolved)return false;}}
-    if(curCat&&a.mod!==curCat)return false;
-    if(q&&!a.vehicleId?.toLowerCase().includes(q)&&!a.vehicleType?.toLowerCase().includes(q)&&!a.mod?.toLowerCase().includes(q))return false;
+function filtered(){
+  if(curSev===null)return null;
+  const q=(document.getElementById('srch')?.value||'').toLowerCase();
+  const ids=visIds();
+  return alerts.filter(a=>{
+    if(!ids.has(a.vid))return false;
+    if(curSev==='RESOLVED'){if(!a.resolved)return false;}
+    else{if(a.severity!==curSev||a.resolved)return false;}
+    if(curMod&&a.mod!==curMod)return false;
+    if(q&&!a.vid.toLowerCase().includes(q)&&!a.vtype.toLowerCase().includes(q)&&!a.mod.toLowerCase().includes(q))return false;
     return true;
   });
 }
 
-function ago(ts){const d=Math.floor((Date.now()-ts)/1000);if(d<60)return`${d}s`;if(d<3600)return`${Math.floor(d/60)}m`;return`${Math.floor(d/3600)}h ago`;}
-
-function scoreColor(s){return s>=71?'var(--red)':s>=31?'var(--amber)':'var(--blue)';}
+const sCol=s=>s>=71?'var(--red)':s>=31?'var(--amber)':'var(--blue)';
+const ago=ts=>{const d=Math.floor((Date.now()-ts)/1000);return d<60?`${d}s`:d<3600?`${Math.floor(d/60)}m`:`${Math.floor(d/3600)}h`;};
 
 function renderFeed(){
   const feed=document.getElementById('feed');
-  const list=getFiltered();
-  if(!list.length){feed.innerHTML='<div class="no-a"><div class="ico">✓</div>NO ALERTS MATCH CURRENT FILTERS</div>';return;}
-  feed.innerHTML=list.map(a=>{
-    const col=scoreColor(a.score);
-    const clsColor=CLS_COLOR[a.vehicleCls]||'var(--text)';
-    return`<div class="acard ${a.severity} ${a.resolved?'resolved':''}" onclick="openModal(${a.id})">
-      <div class="a-left">
-        <span class="sev-tag sev-${a.severity}">${a.severity}</span>
-        <span class="layer-tag lt-${a.layer}">${a.layer}</span>
-        <div class="score-bar-w"><div class="score-bar" style="width:${a.score}%;background:${col}"></div></div>
-        <div style="font-family:var(--mono);font-size:8px;color:${col}">${a.score.toFixed(0)}/100</div>
+  const list=filtered();
+  if(list===null){feed.innerHTML='<div class="empty"><div class="empty-i">☰</div>Select a category above to view alerts</div>';return;}
+  if(!list.length){feed.innerHTML='<div class="empty"><div class="empty-i">✓</div>No alerts in this category</div>';return;}
+  feed.innerHTML=list.map(a=>`
+    <div class="ac ${a.severity} ${a.resolved?'resolved':''}" onclick="openModal(${a.id})">
+      <div class="acl">
+        <span class="stag st-${a.severity}">${a.severity}</span>
+        <span class="ltag">${a.layer}</span>
+        <div class="sbw"><div class="sb" style="width:${a.score}%;background:${sCol(a.score)}"></div></div>
       </div>
-      <div class="a-body">
-        <div class="a-mod">${a.mod}</div>
-        <div class="a-msg">${a.msg}</div>
-        <div class="a-meta">
-          <div class="am" style="color:${clsColor}">● <span class="v">${a.vehicleId}</span></div>
-          <div class="am">📦 <span class="v">${a.vehicleType}</span></div>
-          <div class="am">📊 <span class="v">${typeof a.val==='number'?a.val.toFixed(2):a.val}</span></div>
-          <div class="am">⚑ <span class="v">${typeof a.thr==='number'?a.thr.toFixed(1):a.thr}</span></div>
+      <div class="acb">
+        <div class="acm">${a.mod}</div>
+        <div class="acmsg">${a.msg}</div>
+        <div class="acmeta">
+          <div class="am" style="color:${CC[a.vcls]||'var(--text)'}">● <b>${a.vid}</b></div>
+          <div class="am"><b>${a.vtype}</b></div>
+          <div class="am">val <b>${typeof a.val==='number'?a.val.toFixed(2):a.val}</b></div>
         </div>
       </div>
-      <div class="a-right">
-        ${!a.resolved?`<button class="res-btn" onclick="resolve(event,${a.id})">✓ RESOLVE</button>`:`<span style="font-family:var(--mono);font-size:8px;color:var(--green)">✓ DONE</span>`}
-        <div class="ago-txt">${ago(a.ts)}</div>
+      <div class="acr">
+        ${!a.resolved?`<button class="rbtn" onclick="resolve(event,${a.id})">resolve</button>`:`<span style="font-family:var(--mono);font-size:8px;color:var(--accent)">✓</span>`}
+        <span class="ago">${ago(a.ts)} ago</span>
       </div>
-    </div>`;
-  }).join('');
+    </div>`).join('');
 }
 
-const ALL_CATS=['ENGINE TEMP','OIL PRESSURE','VIBRATION','TYRE [FL]','TYRE [FR]','TYRE [RL]','TYRE [RR]','FUEL DRAIN','FUEL CRITICAL','OVERSPEED','DRIVER BEHAVIOR','AIR BRAKE [PRIMARY]','AIR BRAKE [SECONDARY]','DPF REGEN','AXLE OVERLOAD','TURBO','BATTERY','MISFIRE','ALIGNMENT','TIP-OVER','BELT/CHAIN SLIP','BRAKE WEAR'];
+const ALL_MODS=['ENGINE TEMP','OIL PRESSURE','VIBRATION','TYRE [FL]','TYRE [FR]','TYRE [RL]','TYRE [RR]','FUEL LEAK','LOW FUEL','OVERSPEED','DRIVER BEHAVIOR','AIR BRAKE [PRIMARY]','AIR BRAKE [SECONDARY]','DPF REGEN','AXLE OVERLOAD','TURBO FAILURE','BATTERY','MISFIRE','ALIGNMENT','TIP-OVER','BELT/CHAIN SLIP','BRAKE WEAR'];
+const CRIT_MODS=new Set(['ENGINE TEMP','OIL PRESSURE','AIR BRAKE [PRIMARY]','AIR BRAKE [SECONDARY]','AXLE OVERLOAD','TIP-OVER','OVERSPEED','BATTERY','MISFIRE']);
 
-function renderCats(){
-  const visIds=new Set(visibleVehicles().map(v=>v.id));
-  const counts={};for(const a of allAlerts){if(!a.resolved&&visIds.has(a.vehicleId))counts[a.mod]=(counts[a.mod]||0)+1;}
-  document.getElementById('cat-list').innerHTML=ALL_CATS.filter(c=>counts[c]).map(c=>{
-    const col=['ENGINE TEMP','OIL PRESSURE','BATTERY','MISFIRE','AIR BRAKE [PRIMARY]','AIR BRAKE [SECONDARY]','AXLE OVERLOAD','TIP-OVER','OVERSPEED'].includes(c)?'var(--red)':'var(--amber)';
-    return`<div class="catr ${curCat===c?'sel':''}" onclick="setCat('${c}',this)"><span class="catr-n">${c}</span><span class="catr-c" style="color:${col}">${counts[c]}</span></div>`;
-  }).join('');
+function renderMods(){
+  const ids=visIds();
+  const cnt={};for(const a of alerts){if(!a.resolved&&ids.has(a.vid))cnt[a.mod]=(cnt[a.mod]||0)+1;}
+  const active=ALL_MODS.filter(m=>cnt[m]);
+  document.getElementById('modlist').innerHTML=active.map(m=>`
+    <div class="mr ${curMod===m?'on':''}" onclick="setMod('${m}',this)">
+      <span class="mrn">${m}</span>
+      <span class="mrc" style="color:${CRIT_MODS.has(m)?'var(--red)':'var(--amber)'}">${cnt[m]}</span>
+    </div>`).join('')||`<div style="font-family:var(--mono);font-size:9px;color:var(--muted);padding:10px 6px;text-align:center">No active alerts</div>`;
 }
 
-function setGauge(id,txt,val,max,color){
-  const circ=150.8,offset=circ-(Math.min(val,max)/max)*circ;
-  document.getElementById(id).style.strokeDashoffset=offset;
-  document.getElementById(id).style.stroke=color;
-  document.getElementById(txt).textContent=Math.round(val);
+function setGauge(id,tid,val,max,col){
+  const c=213.6,off=c-(Math.min(val,max)/max)*c;
+  const el=document.getElementById(id);if(!el)return;
+  el.style.strokeDashoffset=off;el.style.stroke=col;
+  document.getElementById(tid).textContent=Math.round(val);
 }
 
-function renderGauges(){
-  const vv=visibleVehicles();
-  if(!vv.length)return;
-  const avgH=vv.reduce((s,v)=>s+v.health_score,0)/vv.length;
-  const avgD=vv.reduce((s,v)=>s+v.driver_score,0)/vv.length;
+function renderRight(){
+  const vv=vis();if(!vv.length)return;
+  const avgH=vv.reduce((s,v)=>s+v.health,0)/vv.length;
+  const avgD=vv.reduce((s,v)=>s+v.driver,0)/vv.length;
   const avgF=vv.reduce((s,v)=>s+v.fuel,0)/vv.length;
-  const avgOil=vv.reduce((s,v)=>s+v.oil_psi/v.prof.normalOil*100,0)/vv.length;
-  setGauge('ga','ga-t',avgH,100,avgH>70?'var(--green)':avgH>40?'var(--amber)':'var(--red)');
-  setGauge('gb','gb-t',avgD,100,avgD>70?'var(--teal)':'var(--amber)');
-  setGauge('gc','gc-t',avgF,100,avgF>20?'var(--blue)':'var(--red)');
-  setGauge('gd','gd-t',avgOil,100,avgOil>70?'var(--purple)':'var(--red)');
-}
+  const avgO=vv.reduce((s,v)=>s+v.oil_psi/v.p.oil*100,0)/vv.length;
+  setGauge('g-h','g-ht',avgH,100,avgH>70?'var(--accent)':avgH>40?'var(--amber)':'var(--red)');
+  setGauge('g-d','g-dt',avgD,100,'var(--blue)');
+  setGauge('g-f','g-ft',avgF,100,avgF>20?'var(--amber)':'var(--red)');
+  setGauge('g-o','g-ot',avgO,100,avgO>70?'var(--accent)':'var(--red)');
 
-function renderQuickStats(){
-  const vv=visibleVehicles();if(!vv.length)return;
-  const qs=document.getElementById('qs-grid');
-  const qt=document.getElementById('qs-title');
-  let items=[];
+  const ids=visIds();
+  const activeA=alerts.filter(a=>!a.resolved&&ids.has(a.vid));
+  const avgE=vv.reduce((s,v)=>s+v.coolant,0)/vv.length;
+  const os=vv.filter(v=>v.speed>v.p.ms*1.15).length;
+  const maint=vv.filter(v=>v.health<40).length;
+  const ee=document.getElementById('sr-e');ee.textContent=avgE.toFixed(1)+'°';ee.style.color=avgE>100?'var(--red)':avgE>85?'var(--amber)':'var(--text)';
+  const se=document.getElementById('sr-s');se.textContent=os;se.style.color=os>0?'var(--red)':'var(--text)';
+  document.getElementById('sr-a').textContent=activeA.length;
+  const me=document.getElementById('sr-m');me.textContent=maint;me.style.color=maint>0?'var(--amber)':'var(--text)';
 
-  if(curClass==='HEAVY'||curClass==='ALL'){
-    const hv=vv.filter(v=>v.cls==='HEAVY');
-    if(hv.length){
-      const avgBP=hv.reduce((s,v)=>s+v.air_brake_p,0)/hv.length;
-      const avgDPF=hv.reduce((s,v)=>s+v.dpf_bp,0)/hv.length;
-      const avgExh=hv.reduce((s,v)=>s+v.exhaust_temp,0)/hv.length;
-      const avgLoad=hv.reduce((s,v)=>s+v.load,0)/hv.length;
-      items.push({v:avgBP.toFixed(0),l:'Brake PSI',col:avgBP<60?'var(--red)':avgBP<90?'var(--amber)':'var(--green)'});
-      items.push({v:avgDPF.toFixed(1),l:'DPF kPa',col:avgDPF>10?'var(--red)':'var(--green)'});
-      items.push({v:avgExh.toFixed(0)+'°',l:'Exhaust °C',col:'var(--text)'});
-      items.push({v:avgLoad.toFixed(0)+'%',l:'Avg Load',col:'var(--text)'});
-    }
-  }
-  if(curClass==='CAR'||curClass==='ALL'){
-    const cv=vv.filter(v=>v.cls==='CAR');
-    if(cv.length){
-      const avgBat=cv.reduce((s,v)=>s+v.battery_v,0)/cv.length;
-      const misfires=allAlerts.filter(a=>a.mod==='MISFIRE'&&!a.resolved&&cv.some(v=>v.id===a.vehicleId)).length;
-      items.push({v:avgBat.toFixed(2)+'V',l:'Avg Battery',col:avgBat<10.5?'var(--red)':avgBat<12?'var(--amber)':'var(--blue)'});
-      items.push({v:misfires,l:'Misfire Events',col:misfires>0?'var(--red)':'var(--green)'});
-    }
-  }
-  if(curClass==='TWO'||curClass==='ALL'){
-    const tv=vv.filter(v=>v.cls==='TWO');
-    if(tv.length){
-      const avgLean=tv.reduce((s,v)=>s+v.lean_deg,0)/tv.length;
-      const tipOvers=allAlerts.filter(a=>a.mod==='TIP-OVER'&&!a.resolved&&tv.some(v=>v.id===a.vehicleId)).length;
-      items.push({v:avgLean.toFixed(1)+'°',l:'Avg Lean',col:avgLean>40?'var(--red)':'var(--two-c)'});
-      items.push({v:tipOvers,l:'Tip-Over Events',col:tipOvers>0?'var(--red)':'var(--green)'});
-    }
-  }
-  // Always show engine temp
-  const avgT=vv.reduce((s,v)=>s+v.engine_temp,0)/vv.length;
-  items.push({v:avgT.toFixed(1)+'°',l:'Avg Engine °C',col:avgT>100?'var(--red)':avgT>85?'var(--amber)':'var(--text)'});
-  const critV=vv.filter(v=>v.status==='crit').length;
-  items.push({v:critV,l:'Vehicles Critical',col:critV>0?'var(--red)':'var(--green)'});
-
-  const labels={'ALL':'FLEET DIAGNOSTICS','HEAVY':'HEAVY DIAGNOSTICS','CAR':'CAR/OBD DIAGNOSTICS','TWO':'2-WHEEL DIAGNOSTICS'};
-  qt.textContent=labels[curClass];
-  qs.innerHTML=items.slice(0,6).map(item=>`<div class="qs"><div class="qs-v" style="color:${item.col}">${item.v}</div><div class="qs-l">${item.l}</div></div>`).join('');
-}
-
-function renderVGrid(){
-  const vv=visibleVehicles();
-  document.getElementById('rh-cnt').textContent=vv.length;
-  document.getElementById('vgrid').innerHTML=vv.map(v=>{
-    const pct=v.health_score;
-    const col=pct>70?'var(--green)':pct>40?'var(--amber)':'var(--red)';
-    const ac=allAlerts.filter(a=>a.vehicleId===v.id&&!a.resolved).length;
-    return`<div class="vc ${v.status}" onclick="filterByV('${v.id}')" title="${v.id} — Health: ${pct.toFixed(0)}%">
-      <div class="vc-id">${v.id}</div>
-      <div class="vc-t" style="color:${CLS_COLOR[v.cls]}">${v.type}</div>
-      <div class="hbw"><div class="hb" style="width:${pct}%;background:${col}"></div></div>
-      <div class="vc-ac">${ac?`<span class="n">${ac}</span>▲`:'·'}</div>
-    </div>`;
+  const maxV=Math.max(...spData,1);
+  document.getElementById('spbars').innerHTML=spData.map((v,i)=>{
+    const h=Math.max(2,Math.round((v/maxV)*28));
+    const op=(0.2+0.8*(i/spData.length)).toFixed(2);
+    return`<div class="spb" style="height:${h}px;background:var(--accent);opacity:${op}"></div>`;
   }).join('');
 }
 
-function renderTopStats(){
-  const vv=visibleVehicles();
-  const active=allAlerts.filter(a=>!a.resolved&&vv.some(v=>v.id===a.vehicleId));
-  const crit=vv.filter(v=>v.status==='crit').length;
-  const warn=vv.filter(v=>v.status==='warn').length;
+function renderTop(){
+  const vv=vis();
+  const cr=vv.filter(v=>v.status==='crit').length;
+  const wa=vv.filter(v=>v.status==='warn').length;
   const ok=vv.filter(v=>v.status==='ok').length;
-  document.getElementById('ts-crit-v').textContent=crit;
-  document.getElementById('ts-warn-v').textContent=warn;
-  document.getElementById('ts-ok-v').textContent=ok;
-  document.getElementById('ts-alerts-v').textContent=active.length;
-  document.getElementById('fc-crit').textContent=crit;
-  document.getElementById('fc-warn').textContent=warn;
-  document.getElementById('fc-ok').textContent=ok;
-  const avgH=vv.reduce((s,v)=>s+v.health_score,0)/(vv.length||1);
-  document.getElementById('fc-health').textContent=avgH.toFixed(0);
-  const total=active.length;
-  document.getElementById('badge').textContent=`${total} ALERT${total!==1?'S':''}`;
-  document.getElementById('badge').style.background=crit>0?'var(--red)':'var(--amber)';
-  const rhLabels={'ALL':'Fleet Overview','HEAVY':'Heavy Fleet (50)','CAR':'Car Fleet (30)','TWO':'Two-Wheelers (20)'};
-  document.getElementById('rh-title').textContent=rhLabels[curClass];
+  document.getElementById('tc-cr').textContent=cr;
+  document.getElementById('tc-wa').textContent=wa;
+  document.getElementById('tc-ok').textContent=ok;
+  document.getElementById('lp-cr').textContent=cr;
+  document.getElementById('lp-wa').textContent=wa;
+  document.getElementById('lp-ok').textContent=ok;
 }
 
-function renderAll(){
-  renderFeed();
-  renderCats();
-  renderGauges();
-  renderQuickStats();
-  renderVGrid();
-  renderTopStats();
-}
+function renderAll(){renderFeed();renderMods();renderRight();renderTop();}
 
-function filterByV(id){
-  document.getElementById('srch').value=id;
-  renderFeed();
-}
-
-function resolve(e,id){
-  e.stopPropagation();
-  const a=allAlerts.find(x=>x.id===id);
-  if(a)a.resolved=true;
-  vehicles.forEach(updateVStatus);
-  renderAll();
-}
-
-// ═══════════════════ FAULT DESCRIPTIONS ═══════════════════
+// ═══ MODAL ═══
 const FDESC={
-  'ENGINE TEMP':'Coolant temperature exceeding safe operating range. Possible cooling system failure, thermostat fault, or sustained high load. Continued operation risks engine seizure.',
-  'OIL PRESSURE':'Oil pressure critically below normal. Probable oil pump failure, low level, or internal leakage. Engine seizure risk if operation continues. Stop immediately.',
-  'VIBRATION':'High vibration RMS sustained across multiple frames. Probable bearing failure, wheel imbalance, or loose component mounting. Reduce speed and inspect axle.',
-  'FUEL DRAIN':'Fuel consumption significantly exceeding model prediction for current speed and load. Possible injector fault, fuel line leak, or extreme load condition.',
-  'FUEL CRITICAL':'Fuel level has dropped below 10% — vehicle is at risk of running out of fuel mid-route. Refuel immediately.',
-  'OVERSPEED':'Vehicle speed exceeds 115% of the safe maximum for its class. Immediate driver intervention required. Safety and tyre integrity at risk.',
-  'DRIVER BEHAVIOR':'Persistent aggressive driving pattern detected across multiple consecutive frames. Fleet coaching and driver intervention recommended.',
-  'AIR BRAKE [PRIMARY]':'Primary air brake circuit pressure insufficient. Braking distance significantly increased. DO NOT operate until pressure is restored to above 60 PSI.',
-  'AIR BRAKE [SECONDARY]':'Secondary air brake circuit pressure insufficient. Redundant circuit compromised — critical for safety redundancy. Immediate service required.',
-  'DPF REGEN':'DPF backpressure elevated while exhaust temperature is too low for passive regeneration. Filter is clogging. Forced active regen required; check SCR system.',
-  'AXLE OVERLOAD':'Estimated gross weight exceeds vehicle GVWR based on air suspension pressure. Excessive stress on axles, frame, and tyres. Redistribute or offload cargo.',
-  'TURBO':'Turbo boost output is zero at operating speed. Probable turbo failure — expect significant power loss, elevated exhaust temperature, and increased fuel consumption.',
-  'BATTERY':'Battery crank voltage critically degraded. Possible internal sulfation, cell failure, or alternator undercharging. No-start condition is imminent.',
-  'MISFIRE':'Crankshaft interval irregularity confirmed by O2 sensor corroboration. One or more cylinders misfiring — causes catalytic converter damage and rough running.',
-  'ALIGNMENT':'Cumulative lateral wheel drift detected under straight-ahead steering. Wheel alignment is offset, causing uneven tyre wear and ~4% fuel efficiency loss.',
-  'TIP-OVER':'Lean angle sustained beyond critical threshold (70°). If impact G-force was also detected, a crash event is likely. Emergency contact should be triggered.',
-  'BELT/CHAIN SLIP':'Drive chain or belt slipping — RPM rising while wheel speed remains flat, or gear ratio deviates >15% from expected. Risk of total drivetrain failure.',
-  'BRAKE WEAR':'Braking efficiency has declined more than 25% from baseline — longer press duration required for same deceleration. Brake pad inspection and replacement needed.',
-  'TYRE [FL]':'Front-left tyre pressure has dropped below the safe threshold. Risk of blowout at speed. Reduce speed and inflate or inspect immediately.',
-  'TYRE [FR]':'Front-right tyre pressure has dropped below the safe threshold. Risk of blowout at speed. Reduce speed and inflate or inspect immediately.',
-  'TYRE [RL]':'Rear-left tyre pressure has dropped below the safe threshold. Risk of blowout at speed. Reduce speed and inflate or inspect immediately.',
-  'TYRE [RR]':'Rear-right tyre pressure has dropped below the safe threshold. Risk of blowout at speed. Reduce speed and inflate or inspect immediately.',
+  'ENGINE TEMP':'Coolant temperature exceeding safe range. Possible cooling system failure or thermostat fault. Continued operation risks seizure.',
+  'OIL PRESSURE':'Oil pressure critically low. Stop vehicle immediately — probable pump failure, low level, or internal leak.',
+  'VIBRATION':'Sustained high vibration. Probable bearing failure, wheel imbalance, or loose mounting.',
+  'FUEL LEAK':'Consumption significantly exceeds model prediction — possible injector fault or fuel line leak.',
+  'LOW FUEL':'Fuel below 10% — refuel before route completion is compromised.',
+  'OVERSPEED':'Vehicle exceeds 115% of safe max speed. Driver intervention required.',
+  'DRIVER BEHAVIOR':'Persistent aggressive driving. Fleet coaching and intervention recommended.',
+  'AIR BRAKE [PRIMARY]':'Primary air circuit below 60 PSI — braking distance severely degraded. Do not operate.',
+  'AIR BRAKE [SECONDARY]':'Secondary air circuit compromised. Safety redundancy lost. Immediate service.',
+  'DPF REGEN':'DPF clogging with low exhaust temp — forced active regen required.',
+  'AXLE OVERLOAD':'Estimated weight exceeds GVWR. Redistribute cargo immediately.',
+  'TURBO FAILURE':'Zero boost at operating speed — probable turbo failure. Expect power loss.',
+  'BATTERY':'Crank voltage critically degraded. No-start imminent.',
+  'MISFIRE':'Crankshaft interval irregularity with O2 corroboration. Misfiring cylinder — catalyst damage risk.',
+  'ALIGNMENT':'Cumulative lateral drift — alignment offset causing tyre wear and fuel efficiency loss.',
+  'TIP-OVER':'Lean angle past critical threshold (70°). If impact detected, crash event is likely.',
+  'BELT/CHAIN SLIP':'Drive chain slipping — RPM rising while wheel speed is flat. Drivetrain failure risk.',
+  'BRAKE WEAR':'Braking efficiency down >25% from baseline. Brake pad replacement needed.',
 };
+['TYRE [FL]','TYRE [FR]','TYRE [RL]','TYRE [RR]'].forEach(t=>{FDESC[t]=`Tyre ${t.slice(6,8)} pressure below safe threshold. Risk of blowout — inflate or inspect immediately.`;});
 
 function openModal(id){
-  const a=allAlerts.find(x=>x.id===id);if(!a)return;
-  const v=vehicles.find(x=>x.id===a.vehicleId);
-  document.getElementById('m-title').textContent=`${a.mod} — ${a.vehicleId}`;
-  const col=scoreColor(a.score);
-  const clsCol=CLS_COLOR[a.vehicleCls]||'var(--text)';
-  let extraRows='';
-  if(v){
-    const base=`<div class="dc"><div class="dcl">Engine °C</div><div class="dcv" style="color:${v.engine_temp>100?'var(--red)':'var(--text)'}">${v.engine_temp.toFixed(1)}</div></div><div class="dc"><div class="dcl">Oil PSI</div><div class="dcv" style="color:${v.oil_psi<v.prof.normalOil*0.5?'var(--red)':'var(--text)'}">${v.oil_psi.toFixed(1)}</div></div><div class="dc"><div class="dcl">Vibration g</div><div class="dcv">${v.vibration.toFixed(3)}</div></div><div class="dc"><div class="dcl">Fuel %</div><div class="dcv" style="color:${v.fuel<10?'var(--amber)':'var(--text)'}">${v.fuel.toFixed(1)}</div></div>`;
-    let clsExtra='';
-    if(v.cls==='HEAVY')clsExtra=`<div class="dc"><div class="dcl">Air Brake P</div><div class="dcv" style="color:${v.air_brake_p<60?'var(--red)':'var(--text)'}">${v.air_brake_p.toFixed(0)} PSI</div></div><div class="dc"><div class="dcl">DPF kPa</div><div class="dcv" style="color:${v.dpf_bp>10?'var(--amber)':'var(--text)'}">${v.dpf_bp.toFixed(1)}</div></div><div class="dc"><div class="dcl">Exhaust °C</div><div class="dcv">${v.exhaust_temp.toFixed(0)}</div></div><div class="dc"><div class="dcl">Turbo PSI</div><div class="dcv" style="color:${v.turbo_boost===0&&v.speed>30?'var(--red)':'var(--text)'}">${v.turbo_boost.toFixed(1)}</div></div>`;
-    if(v.cls==='CAR')clsExtra=`<div class="dc"><div class="dcl">Battery V</div><div class="dcv" style="color:${v.battery_v<10?'var(--red)':'var(--text)'}">${v.battery_v.toFixed(2)}</div></div><div class="dc"><div class="dcl">Alt V</div><div class="dcv">${v.alt_v.toFixed(2)}</div></div><div class="dc"><div class="dcl">O2 Voltage</div><div class="dcv" style="color:${(v.o2_v<0.2||v.o2_v>0.8)?'var(--red)':'var(--text)'}">${v.o2_v.toFixed(3)}</div></div><div class="dc"><div class="dcl">Crank Std</div><div class="dcv" style="color:${Math.abs(v.crank_ms-50)>1.2?'var(--amber)':'var(--text)'}">${Math.abs(v.crank_ms-50).toFixed(2)} ms</div></div>`;
-    if(v.cls==='TWO')clsExtra=`<div class="dc"><div class="dcl">Lean Angle</div><div class="dcv" style="color:${v.lean_deg>60?'var(--red)':'var(--text)'}">${v.lean_deg.toFixed(1)}°</div></div><div class="dc"><div class="dcl">Wheel RPM</div><div class="dcv">${v.wheel_rear.toFixed(0)}</div></div><div class="dc"><div class="dcl">Lat G</div><div class="dcv">${v.lat_g.toFixed(2)}</div></div><div class="dc"><div class="dcl">Vert G</div><div class="dcv">${v.vert_g.toFixed(2)}</div></div>`;
-    extraRows=`<div class="dg4">${base}${clsExtra}</div>`;
-  }
-  document.getElementById('m-body').innerHTML=`
+  const a=alerts.find(x=>x.id===id);if(!a)return;
+  const v=fleet.find(x=>x.id===a.vid);
+  const col=sCol(a.score);
+  document.getElementById('m-t').textContent=a.mod;
+  document.getElementById('m-s').textContent=`${a.vid}  ·  ${a.vtype}  ·  ${a.layer}`;
+  let ctx='';
+  if(v)ctx=`<div class="dg2">
+    <div class="dc"><div class="dcl">Coolant °C</div><div class="dcv" style="color:${v.coolant>100?'var(--red)':'var(--text)'}">${v.coolant.toFixed(1)}</div></div>
+    <div class="dc"><div class="dcl">Oil PSI</div><div class="dcv" style="color:${v.oil_psi<v.p.oil*0.5?'var(--red)':'var(--text)'}">${v.oil_psi.toFixed(1)}</div></div>
+    <div class="dc"><div class="dcl">Fuel %</div><div class="dcv" style="color:${v.fuel<10?'var(--amber)':'var(--text)'}">${v.fuel.toFixed(1)}</div></div>
+    <div class="dc"><div class="dcl">Speed km/h</div><div class="dcv">${v.speed.toFixed(1)}</div></div>
+  </div>`;
+  document.getElementById('m-b').innerHTML=`
     <div class="dg3">
       <div class="dc"><div class="dcl">Reading</div><div class="dcv" style="color:${col}">${typeof a.val==='number'?a.val.toFixed(2):a.val}</div></div>
-      <div class="dc"><div class="dcl">Threshold</div><div class="dcv" style="color:var(--dim)">${typeof a.thr==='number'?a.thr.toFixed(1):a.thr}</div></div>
-      <div class="dc"><div class="dcl">Severity Score</div><div class="dcv" style="color:${col}">${a.score.toFixed(0)}<span class="dcu">/100</span></div></div>
-      <div class="dc"><div class="dcl">Detection Layer</div><div class="dcv" style="font-size:13px">${a.layer}</div></div>
-      <div class="dc"><div class="dcl">Vehicle</div><div class="dcv" style="font-size:13px;color:${clsCol}">${a.vehicleId}</div></div>
-      <div class="dc"><div class="dcl">Class</div><div class="dcv" style="font-size:13px;color:${clsCol}">${a.vehicleCls}</div></div>
+      <div class="dc"><div class="dcl">Threshold</div><div class="dcv" style="color:var(--muted)">${typeof a.thr==='number'?a.thr.toFixed(1):a.thr}</div></div>
+      <div class="dc"><div class="dcl">Score</div><div class="dcv" style="color:${col}">${a.score.toFixed(0)}<span class="dcu">/100</span></div></div>
     </div>
-    ${extraRows}
-    <div class="fault-box"><strong>FAULT ANALYSIS</strong><br><br>${FDESC[a.mod]||'Anomaly detected in vehicle telemetry stream. Review sensor data for the affected system.'}</div>
-    <div style="margin-top:12px;display:flex;justify-content:flex-end;gap:10px;">
-      ${!a.resolved?`<button class="res-btn" style="font-size:10px;padding:5px 16px" onclick="resolve(event,${a.id});document.getElementById('mov').classList.remove('open');renderAll()">✓ MARK RESOLVED</button>`:'<span style="font-family:var(--mono);font-size:10px;color:var(--green)">✓ RESOLVED</span>'}
+    ${ctx}
+    <div class="fb2"><strong>FAULT ANALYSIS</strong>${FDESC[a.mod]||'Anomaly detected — review sensor data for the affected system.'}</div>
+    <div style="margin-top:12px;display:flex;justify-content:flex-end">
+      ${!a.resolved?`<button class="rbtn" style="padding:5px 14px;font-size:9px" onclick="resolve(event,${a.id});document.getElementById('mov').classList.remove('open');renderAll()">✓ Mark Resolved</button>`:'<span style="font-family:var(--mono);font-size:9px;color:var(--accent)">✓ Resolved</span>'}
     </div>`;
   document.getElementById('mov').classList.add('open');
 }
-
 function closeMov(e){if(e.target===document.getElementById('mov'))document.getElementById('mov').classList.remove('open');}
-
-// ════════════════════════════════════════════════════════════
-//  SEED INITIAL ALERTS
-// ════════════════════════════════════════════════════════════
-// Force some vehicles into fault states for demo richness
-const FAULTS=[
-  {i:2,  k:'engine_temp',  v:112},{i:5,  k:'oil_psi',       v:15},
-  {i:8,  k:'health_score', v:28},{i:11, k:'fuel',           v:6},
-  {i:15, k:'tyre_fl',      v:55},{i:18, k:'vibration',      v:3.8},
-  {i:22, k:'air_brake_p',  v:35},{i:25, k:'dpf_bp',         v:14},
-  {i:30, k:'battery_v',    v:8.2},{i:33, k:'engine_temp',   v:108},
-  {i:36, k:'oil_psi',      v:12},{i:40, k:'health_score',   v:22},
-  {i:44, k:'tyre_rr',      v:48},{i:48, k:'vibration',      v:2.5},
-  {i:52, k:'air_brake_s',  v:42},{i:55, k:'lean_deg',       v:72},
-  {i:60, k:'fuel',         v:4},{i:65, k:'engine_temp',     v:106},
-  {i:70, k:'dpf_bp',       v:12},{i:75, k:'oil_psi',        v:22},
-];
-FAULTS.forEach(f=>{if(vehicles[f.i])vehicles[f.i][f.k]=f.v;});
-
-for(const v of vehicles){
-  for(let i=0;i<4;i++)simStep(v);
-  const snap=buildSnap(v);
-  const na=v.detectors.flatMap(d=>d(snap)).map(a=>({...a,vehicleId:v.id,vehicleType:v.type,vehicleCls:v.cls,ts:Date.now()-Math.random()*1200000}));
-  for(const a of na)allAlerts.push(a);
-  updateVStatus(v);
+function resolve(e,id){
+  e.stopPropagation();
+  const a=alerts.find(x=>x.id===id);if(!a)return;
+  a.resolved=true;
+  fleet.forEach(v=>{const ac=alerts.filter(x=>x.vid===v.id&&!x.resolved);v.status=ac.some(x=>x.severity==='CRITICAL')?'crit':ac.some(x=>x.severity==='WARNING')?'warn':'ok';});
+  renderAll();
 }
-allAlerts.sort((a,b)=>b.ts-a.ts);
 
-// ════════════════════════════════════════════════════════════
-//  INIT + LOOP
-// ════════════════════════════════════════════════════════════
+// ═══ SEED ═══
+[[2,'coolant',112],[5,'oil_psi',14],[8,'health',25],[11,'fuel',5],[15,'tfl',52],[18,'vib',3.9],[22,'air_p',32],[25,'dpf',14],[30,'bat',8.1],[33,'coolant',109],[40,'health',22],[44,'trr',45],[55,'lean',74],[65,'oil_psi',20],[70,'dpf',12]].forEach(([i,k,val])=>{if(fleet[i])fleet[i][k]=val;});
+for(const v of fleet){
+  for(let i=0;i<4;i++)step(v);
+  const s=snap(v);
+  const na=v.dets.flatMap(d=>d(s)).map(a=>({...a,vid:v.id,vtype:v.type,vcls:v.cls,ts:Date.now()-Math.random()*900000}));
+  for(const a of na)alerts.push(a);
+  const ac=alerts.filter(x=>x.vid===v.id&&!x.resolved);v.status=ac.some(x=>x.severity==='CRITICAL')?'crit':ac.some(x=>x.severity==='WARNING')?'warn':'ok';
+}
+alerts.sort((a,b)=>b.ts-a.ts);
+
 renderAll();
 setInterval(()=>{document.getElementById('clk').textContent=new Date().toLocaleTimeString('en-IN',{hour12:false})+' IST';},1000);
-setInterval(runDetection,3500);
+setInterval(detect,3500);
 </script>
 </body>
 </html>
